@@ -299,16 +299,36 @@
     <div class="container">
         <div class="controls">
             <h1>Astrocyte Ca²⁺ Simulator</h1>
-            
+
+             <div class="control-group">
+                <h3>Simulation</h3>
+                <div class="ligand-buttons">
+                    <button onclick="toggleSimulation()" id="playBtn">▶ Start</button>
+                    <button onclick="clearCalcium()">Clear Ca²⁺</button>
+                    <button onclick="setLigandMode('glutamate')" id="glutBtn" style="background: linear-gradient(45deg, #ff6b6b, #ff5252);">Glutamate Mode</button>
+                    <button onclick="setLigandMode('atp')" id="atpBtn" style="background: linear-gradient(45deg, #4ecdc4, #26a69a);">ATP Mode</button>
+                    <button onclick="triggerSpontaneous()" style="background: linear-gradient(45deg, #9c27b0, #673ab7);">Trigger Spontaneous</button>
+                    <button onclick="resetView()" style="background: linear-gradient(45deg, #607d8b, #455a64);">Reset View</button>
+                </div>
+                
+                <label>Speed:</label>
+                <input type="range" id="simSpeed" min="1" max="20" value="10">
+                <span id="speedValue">10</span>
+                
+                <label>Zoom Level:</label>
+                <input type="range" id="zoomSlider" min="0.2" max="16.0" step="0.1" value="4.0">
+                <span id="zoomValue">4.0x</span>
+            </div>
+
             <div class="control-group">
                 <h3>Morphology</h3>
                 <label>Cell Size:</label>
-                <input type="range" id="cellSize" min="50" max="200" value="120">
-                <span id="cellSizeValue">120</span>
+                <input type="range" id="cellSize" min="20" max="100" value="70">
+                <span id="cellSizeValue">70</span>
                 
                 <label>Primary Branch Length:</label>
-                <input type="range" id="primaryLength" min="30" max="150" value="80">
-                <span id="primaryLengthValue">80</span>
+                <input type="range" id="primaryLength" min="5" max="70" value="20">
+                <span id="primaryLengthValue">20</span>
                 
                 <label>Branch Levels:</label>
                 <input type="range" id="branchLevels" min="2" max="6" value="4">
@@ -377,25 +397,7 @@
                 <span id="hemichannelValue">0.8</span>
             </div>
 
-            <div class="control-group">
-                <h3>Simulation</h3>
-                <div class="ligand-buttons">
-                    <button onclick="toggleSimulation()" id="playBtn">▶ Start</button>
-                    <button onclick="clearCalcium()">Clear Ca²⁺</button>
-                    <button onclick="setLigandMode('glutamate')" id="glutBtn" style="background: linear-gradient(45deg, #ff6b6b, #ff5252);">Glutamate Mode</button>
-                    <button onclick="setLigandMode('atp')" id="atpBtn" style="background: linear-gradient(45deg, #4ecdc4, #26a69a);">ATP Mode</button>
-                    <button onclick="triggerSpontaneous()" style="background: linear-gradient(45deg, #9c27b0, #673ab7);">Trigger Spontaneous</button>
-                    <button onclick="resetView()" style="background: linear-gradient(45deg, #607d8b, #455a64);">Reset View</button>
-                </div>
-                
-                <label>Speed:</label>
-                <input type="range" id="simSpeed" min="1" max="20" value="10">
-                <span id="speedValue">10</span>
-                
-                <label>Zoom Level:</label>
-                <input type="range" id="zoomSlider" min="0.2" max="4.0" step="0.1" value="1.0">
-                <span id="zoomValue">1.0x</span>
-            </div>
+           
 
             <div class="instructions">
                 <strong>iPad Controls:</strong><br>
