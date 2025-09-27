@@ -1,1326 +1,964 @@
-// Morphology changes trigger regeneration
-            ['cellSize', 'primaryLength<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-touch-fullscreen" content="yes">
-    <title>Astrocytic Calcium Signalling Simulator</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
-            overflow: hidden;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .container {
-            display: flex;
-            height: 100vh;
-            height: 100dvh; /* Dynamic viewport height for mobile */
-        }
-
-        .controls {
-            width: 280px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Mobile-friendly controls */
-@media screen and (max-width: 1024px) {
-    .container {
-        flex-direction: column;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-touch-fullscreen" content="yes" />
+  <title>Calcium Cascade – Missile Command Mode</title>
+  <style>
+    :root {
+      --bg1:#1e3c72; --bg2:#2a5298; --accent:#4fc3f7; --ok:#81c784; --warn:#ffd54f; --bad:#ef5350;
     }
-    
-    .controls {
-        width: 100%;
-        height: 25vh;
-        padding: 10px;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 10px;
-        overflow-y: auto;
-    }
-    
-    .simulation-area {
-        height: 75vh;
-    }
-    
-    .control-group {
-        margin-bottom: 10px;
-        padding: 8px;
-        font-size: 11px;
-    }
-    
-    .control-group h3 {
-        font-size: 12px;
-        margin-bottom: 5px;
-    }
-    
-    label {
-        font-size: 10px;
-        margin: 4px 0 2px 0;
-    }
-    
-    button {
-        padding: 8px 12px;
-        font-size: 11px;
-        min-height: 36px;
-    }
-    
-    .ligand-buttons {
-        grid-template-columns: 1fr;
-        gap: 4px;
-    }
-    
-    .ligand-buttons button {
-        padding: 6px 8px;
-        font-size: 10px;
-        min-height: 32px;
-    }
-    
-    .instructions {
-        display: none;
-    }
-    
-    h1 {
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-}
-
-/* Tablet landscape specific */
-@media screen and (min-width: 1024px) and (max-width: 1280px) and (orientation: landscape) {
-    .container {
-        flex-direction: row;
-    }
-    
-    .controls {
-        width: 25%;
-        height: 100vh;
-        padding: 15px 10px;
-        display: block;
-        font-size: 11px;
-    }
-    
-    .simulation-area {
-        width: 75%;
-        height: 100vh;
-    }
-    
-    .control-group {
-        margin-bottom: 15px;
-        padding: 10px;
-    }
-    
-    .instructions {
-        display: block;
-        font-size: 9px;
-        padding: 8px;
-    }
-}
-        .simulation-area {
-            flex: 1;
-            position: relative;
-            background: #000;
-        }
-
-        h1 {
-            margin: 0 0 20px 0;
-            font-size: 18px;
-            color: #4fc3f7;
-        }
-
-        .control-group {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .control-group h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #81c784;
-        }
-
-        label {
-            display: block;
-            margin: 8px 0 4px 0;
-            font-size: 12px;
-            color: #ccc;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            margin: 4px 0;
-        }
-
-        input[type="number"] {
-            width: 60px;
-            padding: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            color: white;
-        }
-
-        button {
-            padding: 12px 20px;
-            margin: 6px 6px 6px 0;
-            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            min-height: 44px; /* iOS touch target size */
-            min-width: 44px;
-        }
-
-        button:hover, button:active {
-            background: linear-gradient(45deg, #29b6f6, #039be5);
-            transform: translateY(-1px);
-        }
-
-        .ligand-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .ligand-buttons button {
-            margin: 0;
-            font-size: 12px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            margin: 8px 0;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.2);
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4fc3f7;
-            cursor: pointer;
-            border: 2px solid white;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4fc3f7;
-            cursor: pointer;
-            border: 2px solid white;
-        }
-
-        .status {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            backdrop-filter: blur(5px);
-        }
-
-        canvas {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            cursor: grab;
-        }
-
-        canvas:active {
-            cursor: grabbing;
-        }
-
-        .legend {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 11px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin: 4px 0;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 12px;
-            margin-right: 8px;
-            border-radius: 2px;
-        }
-
-        .instructions {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(76, 175, 80, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(76, 175, 80, 0.5);
-            font-size: 12px;
-        }
-    </style>
+    *{box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:0;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#fff;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+    .container{display:flex;height:100vh;height:100dvh}
+    .controls{width:320px;background:rgba(0,0,0,.8);padding:18px;overflow-y:auto;backdrop-filter:blur(10px)}
+    .simulation-area{flex:1;position:relative;background:#000}
+    h1{margin:0 0 12px 0;font-size:18px;color:var(--accent)}
+    .control-group{margin-bottom:16px;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px}
+    .control-group h3{margin:0 0 8px 0;font-size:14px;color:var(--ok)}
+    label{display:block;margin:6px 0 4px 0;font-size:12px;color:#ddd}
+    input[type="text"],select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff}
+    button{padding:10px 14px;margin:6px 6px 0 0;background:linear-gradient(45deg,#4fc3f7,#29b6f6);border:none;border-radius:8px;color:white;cursor:pointer;font-size:14px;font-weight:600;min-height:40px}
+    button.alt{background:linear-gradient(45deg,#ff9800,#f57c00)}
+    button.danger{background:linear-gradient(45deg,#ef5350,#e53935)}
+    button.secondary{background:linear-gradient(45deg,#607d8b,#455a64)}
+    .row{display:flex;gap:8px}
+    .row>*{flex:1}
+    .status{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.6);padding:10px 12px;border-radius:10px;font-size:12px}
+    .status .meter{width:220px;height:10px;background:#222;border-radius:6px;overflow:hidden;margin-top:6px}
+    .status .meter>div{height:100%;background:linear-gradient(90deg,#66bb6a,#ffee58,#ef5350);width:0%}
+    canvas{border:2px solid rgba(255,255,255,.25);cursor:crosshair}
+    .legend{position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,.6);padding:10px 12px;border-radius:10px;font-size:11px}
+    .board{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px}
+    .board div{padding:6px 8px;background:rgba(255,255,255,.06);border-radius:6px}
+    .small{font-size:11px;opacity:.9}
+    @media (max-width:1024px){.container{flex-direction:column}.controls{width:100%;height:32vh}.simulation-area{height:68vh}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="controls">
-            <h1>Astrocyte Ca²⁺ Simulator</h1>
+  <div class="container">
+    <div class="controls">
+      <h1>🧠 Calcium Cascade – Missile Command</h1>
 
-             <div class="control-group">
-                <h3>Simulation</h3>
-                <div class="ligand-buttons">
-                    <button onclick="toggleSimulation()" id="playBtn">▶ Start</button>
-                    <button onclick="clearCalcium()">Clear Ca²⁺</button>
-                    <button onclick="setLigandMode('glutamate')" id="glutBtn" style="background: linear-gradient(45deg, #ff6b6b, #ff5252);">Glutamate Mode</button>
-                    <button onclick="setLigandMode('atp')" id="atpBtn" style="background: linear-gradient(45deg, #4ecdc4, #26a69a);">ATP Mode</button>
-                    <button onclick="triggerSpontaneous()" style="background: linear-gradient(45deg, #9c27b0, #673ab7);">Trigger Spontaneous</button>
-                    <button onclick="resetView()" style="background: linear-gradient(45deg, #607d8b, #455a64);">Reset View</button>
-                </div>
-                
-                <label>Speed:</label>
-                <input type="range" id="simSpeed" min="1" max="20" value="10">
-                <span id="speedValue">10</span>
-                
-                <label>Zoom Level:</label>
-                <input type="range" id="zoomSlider" min="0.2" max="16.0" step="0.1" value="4.0">
-                <span id="zoomValue">4.0x</span>
-            </div>
-
-            <div class="control-group">
-                <h3>Morphology</h3>
-                <label>Cell Size:</label>
-                <input type="range" id="cellSize" min="20" max="100" value="70">
-                <span id="cellSizeValue">70</span>
-                
-                <label>Primary Branch Length:</label>
-                <input type="range" id="primaryLength" min="5" max="70" value="20">
-                <span id="primaryLengthValue">20</span>
-                
-                <label>Branch Levels:</label>
-                <input type="range" id="branchLevels" min="2" max="6" value="4">
-                <span id="branchLevelsValue">4</span>
-                
-                <label>Branch Angle:</label>
-                <input type="range" id="branchAngle" min="15" max="60" value="30">
-                <span id="branchAngleValue">30°</span>
-                
-                <label>Process Width:</label>
-                <input type="range" id="processWidth" min="1" max="8" value="3">
-                <span id="processWidthValue">3</span>
-                
-                <label>Endfeet Size:</label>
-                <input type="range" id="endfeetSize" min="2" max="10" value="5">
-                <span id="endfeetSizeValue">5</span>
-                
-                <label>
-                    <input type="checkbox" id="hemichannels" checked>
-                    Enable Hemichannel Junctions
-                </label>
-                
-                <button onclick="regenerateAstrocyte()">Regenerate Structure</button>
-            </div>
-
-            <div class="control-group">
-                <h3>Calcium Dynamics</h3>
-                <label>Diffusion Rate:</label>
-                <input type="range" id="diffusionRate" min="0.1" max="2.0" step="0.1" value="0.8">
-                <span id="diffusionValue">0.8</span>
-                
-                <label>Decay Rate:</label>
-                <input type="range" id="decayRate" min="0.01" max="0.2" step="0.01" value="0.05">
-                <span id="decayValue">0.05</span>
-                
-                <label>ER Ca²⁺ Release:</label>
-                <input type="range" id="erRelease" min="0.1" max="2.0" step="0.1" value="1.0">
-                <span id="erReleaseValue">1.0</span>
-                
-                <label>mGluR Sensitivity:</label>
-                <input type="range" id="mgluR" min="0.1" max="2.0" step="0.1" value="1.2">
-                <span id="mgluRValue">1.2</span>
-                
-                <label>ATP Sensitivity:</label>
-                <input type="range" id="atpSens" min="0.1" max="2.0" step="0.1" value="1.5">
-                <span id="atpSensValue">1.5</span>
-                
-                <label>Spontaneous Release Rate:</label>
-                <input type="range" id="spontaneousRate" min="0" max="0.01" step="0.001" value="0.002">
-                <span id="spontaneousValue">0.002</span>
-                
-                <label>IP₃ Threshold:</label>
-                <input type="range" id="ip3Threshold" min="0.1" max="1.0" step="0.1" value="0.3">
-                <span id="ip3ThresholdValue">0.3</span>
-                
-                <label>CICR Sensitivity:</label>
-                <input type="range" id="cicrSensitivity" min="0" max="2.0" step="0.1" value="1.2">
-                <span id="cicrValue">1.2</span>
-                
-                <label>CICR Threshold:</label>
-                <input type="range" id="cicrThreshold" min="0.1" max="0.8" step="0.05" value="0.4">
-                <span id="cicrThresholdValue">0.4</span>
-                
-                <label>Hemichannel Strength:</label>
-                <input type="range" id="hemichannelStrength" min="0.1" max="2.0" step="0.1" value="0.8">
-                <span id="hemichannelValue">0.8</span>
-            </div>
-
-           
-
-            <div class="instructions">
-                <strong>iPad Controls:</strong><br>
-                • <strong>Tap:</strong> Release ligands on astrocyte<br>
-                • <strong>Drag:</strong> Pan around the view<br>
-                • <strong>Pinch:</strong> Zoom in/out (2 fingers)<br>
-                • <strong>Sliders:</strong> Adjust parameters<br>
-                • <strong>Portrait mode:</strong> Controls at top<br>
-                • Works offline once loaded<br>
-                • Add to Home Screen for full-screen experience
-            </div>
+      <div class="control-group">
+        <h3>Player</h3>
+        <label for="playerName">Name</label>
+        <input id="playerName" type="text" placeholder="e.g., Ada" maxlength="16" />
+        <div class="row">
+          <button id="startBtn">Start Wave ▶</button>
+          <button id="resetBtn" class="alt">Reset 🔄</button>
         </div>
+      </div>
 
-        <div class="simulation-area">
-            <canvas id="canvas" width="1200" height="800"></canvas>
-            
-            <div class="status">
-                <div>FPS: <span id="fps">0</span></div>
-                <div>Mode: <span id="currentMode">Glutamate</span></div>
-                <div>Ca²⁺ Nodes: <span id="nodeCount">0</span></div>
-            </div>
-
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #666;"></div>
-                    Astrocyte Structure
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(to right, #000, #ff0, #f80, #f00);"></div>
-                    [Ca²⁺] Low → High
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #9c27b0;"></div>
-                    Hemichannel Junctions
-                </div>
-            </div>
+      <div class="control-group">
+        <h3>Leaderboard (Local)</h3>
+        <div id="leaderboard" class="board"></div>
+        <div class="row">
+          <button id="saveScoreBtn" class="secondary">Save Score 💾</button>
+          <button id="clearBoardBtn" class="danger">Clear Board 🧹</button>
         </div>
+        <div class="small">Scores are stored in your browser (localStorage).</div>
+      </div>
+
+      <div class="control-group">
+        <h3>Tips</h3>
+        <div class="small">• Click to fire a Ca²⁺ shot that travels and detonates.<br/>• Keep the excitability bar low by suppressing glutamate near synapses.<br/>• Chain CICR for bigger suppression!<br/>• Ammo is limited per wave.</div>
+      </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+    <div class="simulation-area">
+      <canvas id="canvas" width="1280" height="800"></canvas>
+      <div class="status">
+        <div><strong>Wave:</strong> <span id="uiWave">1</span> &nbsp;•&nbsp; <strong>Score:</strong> <span id="uiScore">0</span> &nbsp;•&nbsp; <strong>Ammo:</strong> <span id="uiAmmo">0</span></div>
+        <div style="margin-top:6px"><strong>Excitability</strong></div>
+        <div class="meter"><div id="excMeter"></div></div>
+        <div class="small" id="uiDebug"></div>
+      </div>
+      <div class="legend small">
+        Axons = orange lines • Spikes = white/orange/red pulses • Synapses = white dots • Glutamate = background color zones (blue→purple→red) • Ca²⁺ = yellow→orange→red • Ca shots = teal trails
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------- Simulation constants -----------------
+    const params = {
+      diffusionRate: 1.1, decayRate: 0.035, erRelease: 0.85, ip3Threshold: 0.55,
+      spontaneousRate: 0.001, hemichannelStrength: 0.4, cicrSensitivity: 0.9,
+      cicrThreshold: 0.42, simSpeed: 1.0, mgluR: 1.0, atpSens: 1.0
+    };
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // World view
+    let zoomLevel = 1.0, panX = 0, panY = 0;
+
+    // Game state
+    let running = false;
+    let wave = 1;
+    let score = 0;
+    let ammo = 0;
+    let bestExcitability = Infinity;
+    let waveStartTime = 0;
+    let waveDuration = 30; // seconds per wave
+
+    // Missile Command mode systems
+    const AXON_COUNT = 5;
+    const SYNAPSE_SPACING = 110;
+    const SPIKE_BASE_RATE = 0.45;
+    const SPIKE_SPEED = 320;
+    const SHOT_SPEED = 700;
+    const SHOT_BLAST_IP3 = 1.2;
+    const SHOT_BLAST_CA = 0.8;
+    const SHOT_COOLDOWN = 0.45;
+    const SHOT_AMMO_PER_WAVE = 8; // Increased base ammo to account for lose conditions
+    const SPIKE_EFFECT_R = 26;
+    const K_RELEASE = 0.085;
+    const TAU_UPTAKE = 1.8;
+    const UPTAKE_GAIN = 2.7;
+    const CA_THETA = 0.45, CA_SLOPE = 0.16;
+    const EXCIT_THRESH = 80;
+    const LOSE_HOLD = 1.5;
+
+    // Structures
+    let astrocyte = null;
+    let axons = [];
+    let synapses = [];
+    let spikes = [];
+    let shots = [];
+    let lastStamp = 0;
+    let aboveTime = 0;
+    let shotTimer = 0;
+
+    // Leaderboard
+    const BOARD_KEY = 'cc_leaderboard_v2';
+
+    // -------------------- Geometry helpers --------------------
+    function worldToScreen(x,y){return {x: x*zoomLevel+panX, y: y*zoomLevel+panY}}
+    function screenToWorld(x,y){return {x: (x-panX)/zoomLevel, y: (y-panY)/zoomLevel}}
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+    const sigmoid = z => 1/(1+Math.exp(-z));
+
+    // -------------------- Astrocyte Structure --------------------
+    class AstrocyteStructure{
+      constructor(cx,cy,size){ 
+        this.centerX=cx; this.centerY=cy; this.size=size; 
+        this.branches=[]; this.nodes=new Map(); this.ip3=new Map(); 
+        this.generate(); 
+      }
+      
+      generate(){
+        this.branches=[]; this.nodes.clear(); this.ip3.clear();
+        const primaryLen=75, branchLevels=4, processWidth=4, branchAngle=40*Math.PI/180; // Shorter, wider angles
+        this.branches.push({x1:this.centerX,y1:this.centerY,x2:this.centerX,y2:this.centerY,width:this.size/4,type:'soma'});
+        const primary=10; // Even more primary branches for coverage
+        for(let i=0;i<primary;i++){ 
+          const a=i/primary*2*Math.PI; 
+          this._branch(this.centerX,this.centerY,a,primaryLen,branchLevels,processWidth,0,branchAngle); 
+        }
+        this._makeNodes();
+      }
+      
+      _branch(x,y,ang,len,levels,width,level,branchAngle){ 
+        if(levels<=0) return; 
+        const ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len; 
+        this.branches.push({x1:x,y1:y,x2:ex,y2:ey,width,type:levels===1?'endfoot':'process'});
+        if(levels>1){ 
+          const num = Math.random()>0.3?2:3; 
+          for(let i=0;i<num;i++){ 
+            const sa=ang+(i-(num-1)/2)*branchAngle+(Math.random()-0.5)*0.25; 
+            this._branch(ex,ey,sa,len*0.72*(0.85+Math.random()*0.3),levels-1,Math.max(1,width*0.82),level+1,branchAngle); 
+          } 
+        }
+      }
+      
+      _makeNodes(){ 
+        const spacing=5, used=new Set(); // Denser node spacing for better coverage
+        this.branches.forEach(b=>{ 
+          const dx=b.x2-b.x1, dy=b.y2-b.y1; 
+          const L=Math.hypot(dx,dy); 
+          const n=Math.max(1,Math.floor(L/spacing)); 
+          for(let i=0;i<=n;i++){ 
+            const t=i/n; 
+            const x=Math.round(b.x1+dx*t), y=Math.round(b.y1+dy*t); 
+            const k=`${x},${y}`; 
+            if(!used.has(k)){ 
+              used.add(k); 
+              this.nodes.set(k,{x,y,calcium:0,type:b.type,width:b.width}); 
+              this.ip3.set(k,0);
+            } 
+          } 
+        }); 
+      }
+      
+      addCa(x,y,a){ 
+        let best=null,bd=1e9; 
+        this.nodes.forEach(n=>{ 
+          const d=Math.hypot(n.x-x,n.y-y); 
+          if(d<bd){bd=d; best=n} 
+        }); 
+        if(best && bd<30) best.calcium+=a; 
+      }
+      
+      addIP3(x,y,a){ 
+        let bestK=null,bd=1e9; 
+        this.nodes.forEach((n,k)=>{ 
+          const d=Math.hypot(n.x-x,n.y-y); 
+          if(d<bd && d<30){bd=d; bestK=k} 
+        }); 
+        if(bestK){ 
+          this.ip3.set(bestK,(this.ip3.get(bestK)||0)+a); 
+        } 
+      }
+      
+      sampleCa(x,y,r2=900){ 
+        let tot=0,c=0; 
+        this.nodes.forEach(n=>{ 
+          const dx=n.x-x, dy=n.y-y; 
+          const d2=dx*dx+dy*dy; 
+          if(d2<r2){ tot+=n.calcium; c++; } 
+        }); 
+        return c?tot/c:0; 
+      }
+      
+      update(dt){
+        const diff=params.diffusionRate*0.01, dec=params.decayRate, er=params.erRelease, 
+              ipT=params.ip3Threshold, spont=params.spontaneousRate, 
+              cicrS=params.cicrSensitivity, cicrT=params.cicrThreshold, speed=params.simSpeed*0.1;
+        const newCa=new Map(), newI=new Map(); 
         
-        let isRunning = false;
-        let currentLigand = 'glutamate';
-        let astrocyte = null;
-        let calciumGrid = {};
-        let animationId = null;
-        let lastFrameTime = 0;
-        let frameCount = 0;
-        let fpsTime = 0;
-        let hemichannelJunctions = [];
+        this.nodes.forEach((n,k)=>{ 
+          newCa.set(k,n.calcium); 
+          newI.set(k,this.ip3.get(k)||0); 
+        });
         
-        // Zoom and Pan variables
-        let zoomLevel = 1.0;
-        let panX = 0;
-        let panY = 0;
-        let isDragging = false;
-        let lastMouseX = 0;
-        let lastMouseY = 0;
-        let touchStartTime = 0;
-        let lastTouchDistance = 0;
-
-        // Astrocyte structure class
-        class AstrocyteStructure {
-            constructor(centerX, centerY, size) {
-                this.centerX = centerX;
-                this.centerY = centerY;
-                this.size = size;
-                this.branches = [];
-                this.nodes = new Map(); // For calcium diffusion
-                this.ip3Levels = new Map(); // IP3 levels for each node
-                this.generate();
+        this.nodes.forEach((n,k)=>{
+          const ca=n.calcium, ip=newI.get(k)||0;
+          if(Math.random()<spont*speed*dt*60) newI.set(k, ip+0.3);
+          if(ip>ipT){ 
+            const rel=(ip-ipT)*er*speed; 
+            newCa.set(k,ca+rel*dt); 
+            newI.set(k, ip*(1-0.1*speed*dt)); 
+          }
+          if(ca>cicrT && cicrS>0){ 
+            const c=(ca-cicrT)*cicrS*0.5*speed; 
+            newCa.set(k,(newCa.get(k)||ca)+c*dt); 
+            newI.set(k,(newI.get(k)||ip)+c*0.3*dt); 
+            if(ca>cicrT*1.5){ 
+              newI.set(k,(newI.get(k)||ip)+ (ca-cicrT*1.5)*0.4*speed*dt ); 
+            } 
+          }
+          const decF = dec/(1+ca*0.5); 
+          newCa.set(k,(newCa.get(k)||ca)*(1-decF*dt)); 
+          newI.set(k,(newI.get(k)||ip)*(1-0.05*dt));
+        });
+        
+        // Neighbor diffusion
+        const nodesArr=[...this.nodes.values()];
+        for(let i=0;i<nodesArr.length;i++){
+          const a=nodesArr[i];
+          for(let j=i+1;j<nodesArr.length;j++){
+            const b=nodesArr[j]; 
+            const dx=b.x-a.x, dy=b.y-a.y; 
+            const d2=dx*dx+dy*dy; 
+            if(d2<144){
+              const deltaCa=(b.calcium-a.calcium)*diff*dt; 
+              const ia=(this.ip3.get(`${a.x},${a.y}`)||0), ib=(this.ip3.get(`${b.x},${b.y}`)||0);
+              newCa.set(`${a.x},${a.y}`,(newCa.get(`${a.x},${a.y}`)||a.calcium)+deltaCa);
+              newCa.set(`${b.x},${b.y}`,(newCa.get(`${b.x},${b.y}`)||b.calcium)-deltaCa);
+              const deltaI=(ib-ia)*diff*0.8*dt; 
+              newI.set(`${a.x},${a.y}`,(newI.get(`${a.x},${a.y}`)||ia)+deltaI); 
+              newI.set(`${b.x},${b.y}`,(newI.get(`${b.x},${b.y}`)||ib)-deltaI);
             }
-
-            generate() {
-                this.branches = [];
-                this.nodes.clear();
-                this.ip3Levels.clear();
-                hemichannelJunctions = [];
-                
-                const branchLevels = parseInt(document.getElementById('branchLevels').value);
-                const branchAngle = parseInt(document.getElementById('branchAngle').value) * Math.PI / 180;
-                const processWidth = parseInt(document.getElementById('processWidth').value);
-                const primaryLength = parseInt(document.getElementById('primaryLength').value);
-                
-                // Create soma
-                this.branches.push({
-                    x1: this.centerX, y1: this.centerY,
-                    x2: this.centerX, y2: this.centerY,
-                    width: this.size / 4,
-                    level: 0,
-                    type: 'soma'
-                });
-
-                // Generate primary branches with adjustable length
-                const primaryBranches = 6;
-                for (let i = 0; i < primaryBranches; i++) {
-                    const angle = (i / primaryBranches) * 2 * Math.PI;
-                    this.generateBranch(
-                        this.centerX, this.centerY, 
-                        angle, primaryLength, 
-                        branchLevels, processWidth, 0
-                    );
-                }
-
-                this.generateCalciumNodes();
-                this.detectHemichannelJunctions();
-            }
-
-            generateBranch(startX, startY, angle, length, remainingLevels, width, level) {
-                if (remainingLevels <= 0) return;
-
-                const branchAngle = parseInt(document.getElementById('branchAngle').value) * Math.PI / 180;
-                const lengthReduction = 0.7;
-                const widthReduction = 0.8;
-                
-                const endX = startX + Math.cos(angle) * length;
-                const endY = startY + Math.sin(angle) * length;
-
-                this.branches.push({
-                    x1: startX, y1: startY,
-                    x2: endX, y2: endY,
-                    width: width,
-                    level: level,
-                    type: remainingLevels === 1 ? 'endfoot' : 'process'
-                });
-
-                if (remainingLevels > 1) {
-                    // Create sub-branches
-                    const numSubBranches = Math.random() > 0.3 ? 2 : 3;
-                    for (let i = 0; i < numSubBranches; i++) {
-                        const subAngle = angle + (i - (numSubBranches-1)/2) * branchAngle + 
-                                       (Math.random() - 0.5) * 0.3;
-                        this.generateBranch(
-                            endX, endY,
-                            subAngle,
-                            length * lengthReduction * (0.8 + Math.random() * 0.4),
-                            remainingLevels - 1,
-                            Math.max(1, width * widthReduction),
-                            level + 1
-                        );
-                    }
-                }
-            }
-
-            generateCalciumNodes() {
-                const nodeSpacing = 8;
-                const nodes = new Set();
-
-                this.branches.forEach(branch => {
-                    const dx = branch.x2 - branch.x1;
-                    const dy = branch.y2 - branch.y1;
-                    const length = Math.sqrt(dx * dx + dy * dy);
-                    const numNodes = Math.max(1, Math.floor(length / nodeSpacing));
-
-                    for (let i = 0; i <= numNodes; i++) {
-                        const t = i / numNodes;
-                        const x = Math.round(branch.x1 + dx * t);
-                        const y = Math.round(branch.y1 + dy * t);
-                        const key = `${x},${y}`;
-                        
-                        if (!nodes.has(key)) {
-                            nodes.add(key);
-                            this.nodes.set(key, {
-                                x: x, y: y,
-                                calcium: 0,
-                                type: branch.type,
-                                width: branch.width
-                            });
-                            this.ip3Levels.set(key, 0);
-                        }
-                    }
-                });
-
-                document.getElementById('nodeCount').textContent = this.nodes.size;
-            }
-
-            detectHemichannelJunctions() {
-                if (!document.getElementById('hemichannels').checked) return;
-                
-                hemichannelJunctions = [];
-                const junctionThreshold = 15; // Distance threshold for junction formation
-                const nodesArray = Array.from(this.nodes.values());
-                
-                for (let i = 0; i < nodesArray.length; i++) {
-                    for (let j = i + 1; j < nodesArray.length; j++) {
-                        const node1 = nodesArray[i];
-                        const node2 = nodesArray[j];
-                        
-                        // Check if nodes are from different branches and close enough
-                        const dx = node1.x - node2.x;
-                        const dy = node1.y - node2.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        if (distance < junctionThreshold && distance > 2) {
-                            // Check if they're from different branch paths
-                            if (!this.areOnSameBranch(node1, node2)) {
-                                hemichannelJunctions.push({
-                                    node1: node1,
-                                    node2: node2,
-                                    distance: distance,
-                                    key1: `${node1.x},${node1.y}`,
-                                    key2: `${node2.x},${node2.y}`
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-
-            areOnSameBranch(node1, node2) {
-                // Simple check - if nodes are very close and aligned, they're likely on the same branch
-                const dx = Math.abs(node1.x - node2.x);
-                const dy = Math.abs(node1.y - node2.y);
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                return distance < 10; // Very close nodes are on same branch
-            }
-
-            draw() {
-                // Apply zoom and pan transformations
-                ctx.save();
-                ctx.translate(panX, panY);
-                ctx.scale(zoomLevel, zoomLevel);
-                
-                // Draw branches
-                this.branches.forEach(branch => {
-                    ctx.strokeStyle = branch.type === 'endfoot' ? '#4fc3f7' : '#666';
-                    ctx.lineWidth = branch.width / zoomLevel; // Adjust line width for zoom
-                    ctx.lineCap = 'round';
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(branch.x1, branch.y1);
-                    ctx.lineTo(branch.x2, branch.y2);
-                    ctx.stroke();
-                    
-                    // Draw endfeet as small circles
-                    if (branch.type === 'endfoot') {
-                        const endfeetSize = parseInt(document.getElementById('endfeetSize').value);
-                        ctx.fillStyle = '#4fc3f7';
-                        ctx.beginPath();
-                        ctx.arc(branch.x2, branch.y2, endfeetSize, 0, 2 * Math.PI);
-                        ctx.fill();
-                    }
-                });
-
-                // Draw hemichannel junctions
-                if (document.getElementById('hemichannels').checked) {
-                    hemichannelJunctions.forEach(junction => {
-                        ctx.strokeStyle = '#9c27b0';
-                        ctx.lineWidth = 2 / zoomLevel;
-                        ctx.setLineDash([3 / zoomLevel, 3 / zoomLevel]);
-                        ctx.beginPath();
-                        ctx.moveTo(junction.node1.x, junction.node1.y);
-                        ctx.lineTo(junction.node2.x, junction.node2.y);
-                        ctx.stroke();
-                        ctx.setLineDash([]);
-                        
-                        // Draw junction points
-                        ctx.fillStyle = '#9c27b0';
-                        ctx.beginPath();
-                        ctx.arc(junction.node1.x, junction.node1.y, 2, 0, 2 * Math.PI);
-                        ctx.arc(junction.node2.x, junction.node2.y, 2, 0, 2 * Math.PI);
-                        ctx.fill();
-                    });
-                }
-
-                // Draw soma
-                ctx.fillStyle = '#888';
-                ctx.beginPath();
-                ctx.arc(this.centerX, this.centerY, this.size / 6, 0, 2 * Math.PI);
-                ctx.fill();
-
-                // Draw calcium
-                this.nodes.forEach(node => {
-                    if (node.calcium > 0.01) {
-                        const intensity = Math.min(1, node.calcium);
-                        const baseSize = 2 + intensity * 4;
-                        const size = Math.max(1, baseSize); // Ensure minimum visibility
-                        
-                        // Color gradient from black -> yellow -> orange -> red
-                        let r, g, b;
-                        if (intensity < 0.33) {
-                            const t = intensity * 3;
-                            r = Math.floor(255 * t);
-                            g = Math.floor(255 * t);
-                            b = 0;
-                        } else if (intensity < 0.66) {
-                            const t = (intensity - 0.33) * 3;
-                            r = 255;
-                            g = Math.floor(255 * (1 - t * 0.5));
-                            b = 0;
-                        } else {
-                            const t = (intensity - 0.66) * 3;
-                            r = 255;
-                            g = Math.floor(128 * (1 - t));
-                            b = 0;
-                        }
-                        
-                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                        ctx.beginPath();
-                        ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-                        ctx.fill();
-                        
-                        // Add glow effect for high concentrations
-                        if (intensity > 0.5) {
-                            ctx.shadowColor = ctx.fillStyle;
-                            ctx.shadowBlur = 10 / zoomLevel;
-                            ctx.beginPath();
-                            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-                            ctx.fill();
-                            ctx.shadowBlur = 0;
-                        }
-                    }
-                });
-                
-                ctx.restore();
-            }
-
-            isPointOnStructure(x, y) {
-                const threshold = 15;
-                return Array.from(this.nodes.values()).some(node => {
-                    const dx = node.x - x;
-                    const dy = node.y - y;
-                    return Math.sqrt(dx * dx + dy * dy) < threshold;
-                });
-            }
-
-            addCalciumAt(x, y, amount) {
-                let minDist = Infinity;
-                let closestNode = null;
-                let closestKey = null;
-                
-                this.nodes.forEach((node, key) => {
-                    const dx = node.x - x;
-                    const dy = node.y - y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestNode = node;
-                        closestKey = key;
-                    }
-                });
-                
-                if (closestNode && minDist < 30) {
-                    closestNode.calcium += amount;
-                }
-            }
-
-            addIP3At(x, y, amount) {
-                let minDist = Infinity;
-                let closestKey = null;
-                
-                this.nodes.forEach((node, key) => {
-                    const dx = node.x - x;
-                    const dy = node.y - y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < minDist && dist < 30) {
-                        minDist = dist;
-                        closestKey = key;
-                    }
-                });
-                
-                if (closestKey) {
-                    const currentIP3 = this.ip3Levels.get(closestKey) || 0;
-                    this.ip3Levels.set(closestKey, currentIP3 + amount);
-                }
-            }
+          }
         }
-
-        // Initialize simulation
-        function init() {
-            // Set initial canvas size
-            resizeCanvas();
-            
-            regenerateAstrocyte();
-            updateControls();
-            setupEventListeners();
-            
-            // Prevent zoom on double-tap for iOS
-            let lastTouchEnd = 0;
-            document.addEventListener('touchend', function (event) {
-                const now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    event.preventDefault();
-                }
-                lastTouchEnd = now;
-            }, false);
-            
-            // Prevent context menu on long press
-            canvas.addEventListener('contextmenu', e => e.preventDefault());
-        }
-
-        function resizeCanvas() {
-            const container = document.querySelector('.simulation-area');
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
-            
-            // Center the astrocyte initially
-            if (astrocyte) {
-                astrocyte.centerX = canvas.width / 2;
-                astrocyte.centerY = canvas.height / 2;
-            }
-        }
-
-        function regenerateAstrocyte() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const size = parseInt(document.getElementById('cellSize').value);
-            
-            astrocyte = new AstrocyteStructure(centerX, centerY, size);
-            calciumGrid = {};
-        }
-
-        function updateControls() {
-            // Update display values
-            document.getElementById('cellSizeValue').textContent = document.getElementById('cellSize').value;
-            document.getElementById('primaryLengthValue').textContent = document.getElementById('primaryLength').value;
-            document.getElementById('branchLevelsValue').textContent = document.getElementById('branchLevels').value;
-            document.getElementById('branchAngleValue').textContent = document.getElementById('branchAngle').value + '°';
-            document.getElementById('processWidthValue').textContent = document.getElementById('processWidth').value;
-            document.getElementById('endfeetSizeValue').textContent = document.getElementById('endfeetSize').value;
-            document.getElementById('diffusionValue').textContent = document.getElementById('diffusionRate').value;
-            document.getElementById('decayValue').textContent = document.getElementById('decayRate').value;
-            document.getElementById('erReleaseValue').textContent = document.getElementById('erRelease').value;
-            document.getElementById('mgluRValue').textContent = document.getElementById('mgluR').value;
-            document.getElementById('atpSensValue').textContent = document.getElementById('atpSens').value;
-            document.getElementById('spontaneousValue').textContent = document.getElementById('spontaneousRate').value;
-            document.getElementById('ip3ThresholdValue').textContent = document.getElementById('ip3Threshold').value;
-            document.getElementById('cicrValue').textContent = document.getElementById('cicrSensitivity').value;
-            document.getElementById('cicrThresholdValue').textContent = document.getElementById('cicrThreshold').value;
-            document.getElementById('hemichannelValue').textContent = document.getElementById('hemichannelStrength').value;
-            document.getElementById('speedValue').textContent = document.getElementById('simSpeed').value;
-            document.getElementById('zoomValue').textContent = document.getElementById('zoomSlider').value + 'x';
-        }
-
-        function setupEventListeners() {
-            // Control updates
-            document.querySelectorAll('input[type="range"]').forEach(input => {
-                input.addEventListener('input', updateControls);
-            });
-
-            // Morphology changes trigger regeneration
-            ['cellSize', 'primaryLength', 'branchLevels', 'branchAngle', 'processWidth', 'endfeetSize'].forEach(id => {
-                document.getElementById(id).addEventListener('change', regenerateAstrocyte);
-            });
-
-            // Hemichannel checkbox
-            document.getElementById('hemichannels').addEventListener('change', regenerateAstrocyte);
-
-            // Canvas interaction
-            canvas.addEventListener('mousedown', handleMouseDown);
-            canvas.addEventListener('mousemove', handleMouseMove);
-            canvas.addEventListener('mouseup', handleMouseUp);
-            canvas.addEventListener('wheel', handleWheel, { passive: false });
-            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-            
-            // Zoom slider
-            document.getElementById('zoomSlider').addEventListener('input', handleZoomSlider);
-        }
-
-        function handleMouseDown(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            if (e.button === 0) { // Left click
-                isDragging = true;
-                lastMouseX = x;
-                lastMouseY = y;
-                canvas.style.cursor = 'grabbing';
-            }
-        }
-
-        function handleMouseMove(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            if (isDragging) {
-                const deltaX = x - lastMouseX;
-                const deltaY = y - lastMouseY;
-                panX += deltaX;
-                panY += deltaY;
-                lastMouseX = x;
-                lastMouseY = y;
-            }
-        }
-
-        function handleMouseUp(e) {
-            if (isDragging) {
-                isDragging = false;
-                canvas.style.cursor = 'grab';
-                
-                // Check if this was a click (not a drag) for ligand release
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const dragDistance = Math.sqrt(
-                    Math.pow(x - lastMouseX, 2) + Math.pow(y - lastMouseY, 2)
-                );
-                
-                if (dragDistance < 5) { // Small movement = click
-                    handleLigandRelease(x, y);
-                }
-            }
-        }
-
-        function handleWheel(e) {
-            e.preventDefault();
-            
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            // Zoom towards mouse position
-            const wheel = e.deltaY < 0 ? 1.1 : 0.9;
-            const newZoom = Math.max(0.2, Math.min(4.0, zoomLevel * wheel));
-            
-            // Adjust pan to zoom towards mouse
-            const zoomPoint = {
-                x: (mouseX - panX) / zoomLevel,
-                y: (mouseY - panY) / zoomLevel
-            };
-            
-            panX = mouseX - zoomPoint.x * newZoom;
-            panY = mouseY - zoomPoint.y * newZoom;
-            
-            zoomLevel = newZoom;
-            document.getElementById('zoomSlider').value = zoomLevel;
-            updateControls();
-        }
-
-        function handleZoomSlider() {
-            const newZoom = parseFloat(document.getElementById('zoomSlider').value);
-            
-            // Zoom towards center of canvas
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            const zoomPoint = {
-                x: (centerX - panX) / zoomLevel,
-                y: (centerY - panY) / zoomLevel
-            };
-            
-            panX = centerX - zoomPoint.x * newZoom;
-            panY = centerY - zoomPoint.y * newZoom;
-            
-            zoomLevel = newZoom;
-            updateControls();
-        }
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            touchStartTime = Date.now();
-            
-            if (e.touches.length === 1) {
-                // Single touch - start panning
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                
-                isDragging = true;
-                lastMouseX = x;
-                lastMouseY = y;
-            } else if (e.touches.length === 2) {
-                // Two finger touch - start pinch zoom
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const distance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                lastTouchDistance = distance;
-                isDragging = false; // Don't pan during pinch
-            }
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            
-            if (e.touches.length === 1 && isDragging) {
-                // Single touch - pan
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                
-                const deltaX = x - lastMouseX;
-                const deltaY = y - lastMouseY;
-                panX += deltaX;
-                panY += deltaY;
-                lastMouseX = x;
-                lastMouseY = y;
-            } else if (e.touches.length === 2) {
-                // Two finger touch - pinch zoom
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const rect = canvas.getBoundingClientRect();
-                
-                const distance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                
-                if (lastTouchDistance > 0) {
-                    const scale = distance / lastTouchDistance;
-                    const newZoom = Math.max(0.2, Math.min(4.0, zoomLevel * scale));
-                    
-                    // Zoom towards center point between fingers
-                    const centerX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
-                    const centerY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
-                    
-                    const zoomPoint = {
-                        x: (centerX - panX) / zoomLevel,
-                        y: (centerY - panY) / zoomLevel
-                    };
-                    
-                    panX = centerX - zoomPoint.x * newZoom;
-                    panY = centerY - zoomPoint.y * newZoom;
-                    
-                    zoomLevel = newZoom;
-                    document.getElementById('zoomSlider').value = zoomLevel;
-                    updateControls();
-                }
-                
-                lastTouchDistance = distance;
-            }
-        }
-
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            const touchDuration = Date.now() - touchStartTime;
-            
-            if (isDragging && e.changedTouches.length === 1 && touchDuration < 200) {
-                // Quick tap - release ligand
-                const touch = e.changedTouches[0];
-                const rect = canvas.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                
-                handleLigandRelease(x, y);
-            }
-            
-            isDragging = false;
-            lastTouchDistance = 0;
-        }
-
-        function handleLigandRelease(x, y) {
-            if (!astrocyte) return;
-            
-            // Convert screen coordinates to world coordinates
-            const worldX = (x - panX) / zoomLevel;
-            const worldY = (y - panY) / zoomLevel;
-            
-            if (astrocyte.isPointOnStructure(worldX, worldY)) {
-                releaseLigand(worldX, worldY);
-            }
-        }
-
-        function resetView() {
-            zoomLevel = 1.0;
-            panX = 0;
-            panY = 0;
-            document.getElementById('zoomSlider').value = 1.0;
-            updateControls();
-        }
-
-        function releaseLigand(x, y) {
-            if (!astrocyte) return;
-            
-            let ip3Amount;
-            if (currentLigand === 'glutamate') {
-                ip3Amount = parseFloat(document.getElementById('mgluR').value) * 1.2;
+        
+        this.nodes.forEach((n,k)=>{ 
+          n.calcium=clamp(newCa.get(k),0,5); 
+          this.ip3.set(k,clamp(newI.get(k),0,3)); 
+        });
+      }
+      
+      draw(){
+        ctx.save(); 
+        ctx.translate(panX,panY); 
+        ctx.scale(zoomLevel,zoomLevel);
+        
+        // Draw branches
+        this.branches.forEach(b=>{ 
+          ctx.strokeStyle = b.type==='endfoot' ? '#4fc3f7' : '#666'; 
+          ctx.lineWidth = b.width/zoomLevel; 
+          ctx.lineCap='round'; 
+          ctx.beginPath(); 
+          ctx.moveTo(b.x1,b.y1); 
+          ctx.lineTo(b.x2,b.y2); 
+          ctx.stroke(); 
+          if(b.type==='endfoot'){ 
+            ctx.fillStyle='#4fc3f7'; 
+            ctx.beginPath(); 
+            ctx.arc(b.x2,b.y2,5,0,Math.PI*2); 
+            ctx.fill(); 
+          }
+        });
+        
+        // Draw soma
+        ctx.fillStyle='#888'; 
+        ctx.beginPath(); 
+        ctx.arc(this.centerX,this.centerY,this.size/6,0,Math.PI*2); 
+        ctx.fill();
+        
+        // Draw calcium
+        this.nodes.forEach(n=>{ 
+          if(n.calcium>0.01){ 
+            const I=Math.min(1,n.calcium); 
+            let r,g,b; 
+            if(I<0.33){
+              const t=I*3;
+              r=Math.floor(255*t);
+              g=Math.floor(255*t);
+              b=0;
+            } else if(I<0.66){
+              const t=(I-0.33)*3;
+              r=255;
+              g=Math.floor(255*(1-t*0.5));
+              b=0;
             } else {
-                ip3Amount = parseFloat(document.getElementById('atpSens').value) * 1.5;
-            }
-            
-            // Add IP3 to trigger ER release
-            astrocyte.addIP3At(x, y, ip3Amount);
-            
-            // Also add some immediate calcium for visual feedback
-            const immediateCalcium = parseFloat(document.getElementById('erRelease').value) * 0.3;
-            astrocyte.addCalciumAt(x, y, immediateCalcium);
-        }
-
-        function triggerSpontaneous() {
-            if (!astrocyte) return;
-            
-            // Trigger spontaneous release at a random location
-            const nodesArray = Array.from(astrocyte.nodes.values());
-            const randomNode = nodesArray[Math.floor(Math.random() * nodesArray.length)];
-            
-            const spontaneousAmount = parseFloat(document.getElementById('erRelease').value) * 0.8;
-            astrocyte.addCalciumAt(randomNode.x, randomNode.y, spontaneousAmount);
-            
-            // Also add some IP3 for sustained release
-            const ip3Amount = 0.6;
-            astrocyte.addIP3At(randomNode.x, randomNode.y, ip3Amount);
-        }
-
-        function setLigandMode(mode) {
-            currentLigand = mode;
-            document.getElementById('currentMode').textContent = 
-                mode === 'glutamate' ? 'Glutamate' : 'ATP';
-            
-            // Update button styles
-            document.getElementById('glutBtn').style.opacity = mode === 'glutamate' ? '1' : '0.6';
-            document.getElementById('atpBtn').style.opacity = mode === 'atp' ? '1' : '0.6';
-        }
-
-        function toggleSimulation() {
-            isRunning = !isRunning;
-            const btn = document.getElementById('playBtn');
-            
-            if (isRunning) {
-                btn.textContent = '⏸ Pause';
-                animate();
-            } else {
-                btn.textContent = '▶ Start';
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                }
-            }
-        }
-
-        function clearCalcium() {
-            if (astrocyte) {
-                astrocyte.nodes.forEach(node => {
-                    node.calcium = 0;
-                });
-                astrocyte.ip3Levels.forEach((value, key) => {
-                    astrocyte.ip3Levels.set(key, 0);
-                });
-            }
-        }
-
-        function updateCalciumDynamics() {
-            if (!astrocyte) return;
-            
-            const diffusionRate = parseFloat(document.getElementById('diffusionRate').value) * 0.01;
-            const decayRate = parseFloat(document.getElementById('decayRate').value);
-            const erRelease = parseFloat(document.getElementById('erRelease').value);
-            const ip3Threshold = parseFloat(document.getElementById('ip3Threshold').value);
-            const spontaneousRate = parseFloat(document.getElementById('spontaneousRate').value);
-            const hemichannelStrength = parseFloat(document.getElementById('hemichannelStrength').value);
-            const cicrSensitivity = parseFloat(document.getElementById('cicrSensitivity').value);
-            const cicrThreshold = parseFloat(document.getElementById('cicrThreshold').value);
-            const speed = parseInt(document.getElementById('simSpeed').value) * 0.1;
-            
-            // Create copies for calculation
-            const newCalcium = new Map();
-            const newIP3 = new Map();
-            
-            astrocyte.nodes.forEach((node, key) => {
-                newCalcium.set(key, node.calcium);
-                newIP3.set(key, astrocyte.ip3Levels.get(key) || 0);
-            });
-            
-            // Process each node
-            astrocyte.nodes.forEach((node, key) => {
-                const currentCalcium = node.calcium;
-                const currentIP3 = astrocyte.ip3Levels.get(key) || 0;
-                
-                // Spontaneous IP3 generation (rare events)
-                if (Math.random() < spontaneousRate * speed) {
-                    newIP3.set(key, currentIP3 + 0.3);
-                }
-                
-                // IP3-mediated ER calcium release
-                if (currentIP3 > ip3Threshold) {
-                    const releaseAmount = (currentIP3 - ip3Threshold) * erRelease * speed;
-                    newCalcium.set(key, currentCalcium + releaseAmount);
-                    // IP3 is consumed in the process
-                    newIP3.set(key, currentIP3 * (1 - 0.1 * speed));
-                }
-                
-                // Calcium-Induced Calcium Release (CICR) - KEY for regenerative waves!
-                if (currentCalcium > cicrThreshold && cicrSensitivity > 0) {
-                    // High calcium triggers more ER calcium release via ryanodine receptors
-                    const cicrAmount = (currentCalcium - cicrThreshold) * cicrSensitivity * 0.5 * speed;
-                    newCalcium.set(key, currentCalcium + cicrAmount);
-                    
-                    // CICR also generates some IP3 (positive feedback)
-                    const cicrIP3 = cicrAmount * 0.3;
-                    newIP3.set(key, currentIP3 + cicrIP3);
-                    
-                    // Calcium-dependent IP3 production (regenerative mechanism)
-                    if (currentCalcium > cicrThreshold * 1.5) {
-                        const calciumToIP3 = (currentCalcium - cicrThreshold * 1.5) * 0.4 * speed;
-                        newIP3.set(key, currentIP3 + calciumToIP3);
-                    }
-                }
-                
-                // Calcium decay (with saturable kinetics)
-                const decayFactor = decayRate / (1 + currentCalcium * 0.5); // Slower decay at high [Ca]
-                newCalcium.set(key, currentCalcium * (1 - decayFactor * speed));
-                
-                // IP3 decay
-                newIP3.set(key, currentIP3 * (1 - 0.05 * speed));
-                
-                // Diffusion to neighbors
-                const neighbors = findNeighbors(node);
-                neighbors.forEach(neighbor => {
-                    const neighborKey = `${neighbor.x},${neighbor.y}`;
-                    
-                    // Calcium diffusion (enhanced by high concentrations)
-                    const caDiff = (neighbor.calcium - currentCalcium) * diffusionRate * speed;
-                    newCalcium.set(key, newCalcium.get(key) + caDiff);
-                    
-                    // IP3 diffusion (helps propagate waves)
-                    const neighborIP3 = astrocyte.ip3Levels.get(neighborKey) || 0;
-                    const ip3Diff = (neighborIP3 - currentIP3) * diffusionRate * 0.8 * speed;
-                    newIP3.set(key, newIP3.get(key) + ip3Diff);
-                });
-            });
-            
-            // Hemichannel-mediated transfer
-            if (document.getElementById('hemichannels').checked) {
-                hemichannelJunctions.forEach(junction => {
-                    const ca1 = newCalcium.get(junction.key1) || 0;
-                    const ca2 = newCalcium.get(junction.key2) || 0;
-                    const ip3_1 = newIP3.get(junction.key1) || 0;
-                    const ip3_2 = newIP3.get(junction.key2) || 0;
-                    
-                    // Calcium transfer through hemichannels
-                    const caTransfer = (ca1 - ca2) * hemichannelStrength * 0.01 * speed;
-                    newCalcium.set(junction.key1, ca1 - caTransfer);
-                    newCalcium.set(junction.key2, ca2 + caTransfer);
-                    
-                    // IP3 can also pass through gap junctions (important for wave propagation)
-                    const ip3Transfer = (ip3_1 - ip3_2) * hemichannelStrength * 0.005 * speed;
-                    newIP3.set(junction.key1, ip3_1 - ip3Transfer);
-                    newIP3.set(junction.key2, ip3_2 + ip3Transfer);
-                });
-            }
-            
-            // Apply changes
-            astrocyte.nodes.forEach((node, key) => {
-                node.calcium = Math.max(0, Math.min(5, newCalcium.get(key))); // Cap at 5 to prevent runaway
-            });
-            
-            astrocyte.ip3Levels.forEach((value, key) => {
-                astrocyte.ip3Levels.set(key, Math.max(0, Math.min(3, newIP3.get(key)))); // Cap IP3 too
-            });
-        }
-
-        function findNeighbors(node) {
-            const neighbors = [];
-            const searchRadius = 12;
-            
-            astrocyte.nodes.forEach(otherNode => {
-                if (otherNode !== node) {
-                    const dx = otherNode.x - node.x;
-                    const dy = otherNode.y - node.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist < searchRadius) {
-                        neighbors.push(otherNode);
-                    }
-                }
-            });
-            
-            return neighbors;
-        }
-
-        function animate(timestamp = 0) {
-            if (!isRunning) return;
-            
-            // Calculate FPS
-            if (timestamp - fpsTime > 1000) {
-                document.getElementById('fps').textContent = frameCount;
-                frameCount = 0;
-                fpsTime = timestamp;
-            }
-            frameCount++;
-            
-            // Update simulation
-            updateCalciumDynamics();
-            
-            // Render
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            if (astrocyte) {
-                astrocyte.draw();
-            }
-            
-            // Draw zoom/pan info
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '12px monospace';
-            ctx.fillText(`Zoom: ${zoomLevel.toFixed(1)}x`, 10, canvas.height - 30);
-            ctx.fillText(`Pan: ${Math.round(panX)}, ${Math.round(panY)}`, 10, canvas.height - 15);
-            
-            animationId = requestAnimationFrame(animate);
-        }
-
-        // Initialize when page loads
-        window.addEventListener('load', init);
-        window.addEventListener('resize', resizeCanvas);
+              const t=(I-0.66)*3;
+              r=255;
+              g=Math.floor(128*(1-t));
+              b=0;
+            } 
+            ctx.fillStyle=`rgb(${r},${g},${b})`; 
+            const size=Math.max(1,2+I*4); 
+            ctx.beginPath(); 
+            ctx.arc(n.x,n.y,size,0,Math.PI*2); 
+            ctx.fill(); 
+            if(I>0.5){ 
+              ctx.shadowColor=ctx.fillStyle; 
+              ctx.shadowBlur=8; 
+              ctx.beginPath(); 
+              ctx.arc(n.x,n.y,size,0,Math.PI*2); 
+              ctx.fill(); 
+              ctx.shadowBlur=0; 
+            } 
+          }
+        });
         
-        // Prevent page bounce on iOS
-        document.body.addEventListener('touchstart', function (e) {
-            if (e.target === canvas) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        ctx.restore();
+      }
+    }
+
+    // -------------------- Game Objects --------------------
+    class AxonPath{
+      constructor(points){ 
+        this.points=points; 
+        this.segs=[]; 
+        this.total=0; 
+        for(let i=0;i<points.length-1;i++){ 
+          const a=points[i], b=points[i+1]; 
+          const L=Math.hypot(b.x-a.x,b.y-a.y); 
+          this.segs.push({a,b,L}); 
+          this.total+=L; 
+        } 
+      }
+      
+      posAt(u){
+        let d = u*this.total; 
+        for(const s of this.segs){ 
+          if(d<=s.L){ 
+            const t=d/s.L; 
+            return {x:s.a.x+(s.b.x-s.a.x)*t, y:s.a.y+(s.b.y-s.a.y)*t}; 
+          } 
+          d-=s.L; 
+        } 
+        return this.segs.length?{x:this.segs.at(-1).b.x,y:this.segs.at(-1).b.y}:{x:0,y:0};
+      }
+    }
+
+    class SpikePacket{ 
+      constructor(axon,speed){ 
+        this.axon=axon; 
+        this.u=0; 
+        this.speed=speed; 
+        this.dead=false; 
+      } 
+      
+      step(dt){ 
+        this.u += (this.speed*dt)/this.axon.total; // Fixed: was axon.total
+        if(this.u>=1){ 
+          this.dead=true; 
+        } 
+      } 
+      
+      get pos(){ 
+        return this.axon.posAt(this.u); 
+      } 
+    }
+
+    class SynapseSite{ 
+      constructor(p){ 
+        this.x=p.x; 
+        this.y=p.y; 
+        this.G=0; 
+      }
+      
+      draw(){ 
+        // Simple white dots for synapses - glutamate shown via background
+        ctx.fillStyle='#ffffff'; 
+        ctx.beginPath(); 
+        ctx.arc(this.x,this.y,2,0,Math.PI*2); 
+        ctx.fill(); 
         
-        document.body.addEventListener('touchend', function (e) {
-            if (e.target === canvas) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        // Optional: small outline to make them more visible
+        ctx.strokeStyle='#333333';
+        ctx.lineWidth=1;
+        ctx.beginPath(); 
+        ctx.arc(this.x,this.y,2,0,Math.PI*2); 
+        ctx.stroke();
+      }
+    }
+
+    class CaShot{ 
+      constructor(src,dst){ 
+        this.src=src; 
+        this.dst=dst; 
+        this.u=0; 
+        this.dead=false; 
+        this.dist=Math.hypot(dst.x-src.x,dst.y-src.y); 
+      }
+      
+      step(dt){ 
+        this.u += SHOT_SPEED*dt/Math.max(1,this.dist); 
+        if(this.u>=1){ 
+          this.u=1; 
+          this.dead=true; 
+          createCaExplosion(this.dst.x,this.dst.y); 
+        } 
+      }
+      
+      draw(){ 
+        const p={ 
+          x:this.src.x+(this.dst.x-this.src.x)*this.u, 
+          y:this.src.y+(this.dst.y-this.src.y)*this.u 
+        }; 
+        ctx.save(); 
+        ctx.strokeStyle='#26c6da'; 
+        ctx.lineWidth=2; 
+        ctx.beginPath(); 
+        ctx.moveTo(this.src.x,this.src.y); 
+        ctx.lineTo(p.x,p.y); 
+        ctx.stroke(); 
+        ctx.fillStyle='#26c6da'; 
+        ctx.beginPath(); 
+        ctx.arc(p.x,p.y,3,0,Math.PI*2); 
+        ctx.fill(); 
+        ctx.restore(); 
+      }
+    }
+
+    function colorFromG(G){ 
+      const t = clamp(G/6,0,1); 
+      const r = 255; 
+      const g = Math.floor(255*(1-t)); 
+      const b = Math.floor(255*t); 
+      return `rgb(${r},${g},${b})`; 
+    }
+
+    // -------------------- Game World Generation --------------------
+    function generateAxonField(){
+      axons=[]; 
+      synapses=[]; 
+      const w=canvas.width, h=canvas.height; 
+      const margin=80;
+      
+      for(let i=0;i<AXON_COUNT;i++){
+        const y1 = margin + (i+0.5)*( (h-2*margin)/AXON_COUNT );
         
-        document.body.addEventListener('touchmove', function (e) {
-            if (e.target === canvas) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-    </script>
+        // Create smooth curved path using more control points
+        const controlPoints = [];
+        const numPoints = 20; // More points for smoother curves
+        
+        for(let j = 0; j <= numPoints; j++) {
+          const t = j / numPoints;
+          const x = margin + t * (w - 2*margin);
+          
+          // Create smooth sine wave variation
+          const amplitude = 30 + Math.sin(i * 0.8) * 20; // Vary amplitude per axon
+          const frequency = 0.015 + i * 0.002; // Slightly different frequencies
+          const phase = i * 0.7; // Phase offset per axon
+          
+          const wobble = Math.sin(x * frequency + phase) * amplitude;
+          
+          controlPoints.push({x: x, y: y1 + wobble});
+        }
+        
+        const ax = new AxonPath(controlPoints); 
+        axons.push(ax);
+        
+        // Generate synapses along axon - skip first and last points
+        const steps = Math.floor(ax.total/SYNAPSE_SPACING);
+        for(let s=1; s<steps; s++){ 
+          const p = ax.posAt(s/steps); 
+          synapses.push(new SynapseSite(p)); 
+        }
+      }
+    }
+
+    // -------------------- Game Logic --------------------
+    function spawnSpikes(dt){ 
+      const rate = SPIKE_BASE_RATE * (1 + (wave-1)*0.35); 
+      axons.forEach(ax=>{ 
+        if(Math.random() < rate*dt){ 
+          spikes.push(new SpikePacket(ax,SPIKE_SPEED*(0.9+Math.random()*0.25))); 
+        } 
+      }); 
+    }
+
+    function updateGlutamate(dt){
+      // Spikes increase glutamate near synapses
+      for(const sp of spikes){ 
+        const p=sp.pos; 
+        for(const s of synapses){ 
+          const d2=(s.x-p.x)**2 + (s.y-p.y)**2; 
+          if(d2 < SPIKE_EFFECT_R*SPIKE_EFFECT_R){ 
+            const Ca = astrocyte.sampleCa(s.x,s.y); 
+            const I = sigmoid((Ca-CA_THETA)/CA_SLOPE); 
+            s.G += K_RELEASE*(1-I); 
+          } 
+        } 
+      }
+      
+      // Decay glutamate with Ca-dependent uptake
+      for(const s of synapses){ 
+        const Ca = astrocyte.sampleCa(s.x,s.y); 
+        const boost = 1 + UPTAKE_GAIN*sigmoid((Ca-CA_THETA)/CA_SLOPE); 
+        const tau = TAU_UPTAKE/boost; 
+        s.G -= (s.G/tau)*dt; 
+        s.G = Math.max(0,s.G); 
+      }
+    }
+
+    function excitabilitySum(){ 
+      return synapses.reduce((a,s)=>a+s.G,0); 
+    }
+
+    function createCaExplosion(x,y){ 
+      astrocyte.addIP3(x,y, SHOT_BLAST_IP3); 
+      astrocyte.addCa(x,y, SHOT_BLAST_CA); 
+      
+      // Create visual explosion effect
+      const explosionRadius = 25;
+      for(let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const px = x + Math.cos(angle) * explosionRadius;
+        const py = y + Math.sin(angle) * explosionRadius;
+        astrocyte.addCa(px, py, SHOT_BLAST_CA * 0.3);
+      }
+      
+      const localG = synapses.filter(s=> (s.x-x)**2 + (s.y-y)**2 < 900).reduce((a,s)=>a+s.G,0);
+      const baseScore = 20;
+      const glutamateBonus = Math.floor(localG * 1.5);
+      const totalScore = baseScore + glutamateBonus;
+      
+      score += totalScore;
+      
+      // Show score popup effect would go here in a more advanced version
+    }
+
+    // -------------------- Leaderboard --------------------
+    function loadBoard(){ 
+      try{ 
+        return JSON.parse(localStorage.getItem(BOARD_KEY)||'[]'); 
+      }catch{ 
+        return []; 
+      } 
+    }
+    
+    function saveBoard(arr){ 
+      localStorage.setItem(BOARD_KEY, JSON.stringify(arr)); 
+    }
+    
+    function addScore(name,score){ 
+      const arr=loadBoard(); 
+      arr.push({name:name||'Player',score,ts:Date.now()}); 
+      arr.sort((a,b)=>b.score-a.score); 
+      saveBoard(arr.slice(0,10)); 
+      renderBoard(); 
+    }
+    
+    function clearBoard(){ 
+      localStorage.removeItem(BOARD_KEY); 
+      renderBoard(); 
+    }
+    
+    function renderBoard(){ 
+      const el=document.getElementById('leaderboard'); 
+      const arr=loadBoard(); 
+      if(!arr.length){ 
+        el.innerHTML='<div>No scores yet</div><div>—</div>'; 
+        return; 
+      } 
+      el.innerHTML = arr.map((r,i)=>`<div>#${i+1} ${escapeHtml(r.name)}</div><div>${r.score}</div>`).join(''); 
+    }
+    
+    const escapeHtml = s => (s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+    // -------------------- Input Handling --------------------
+    canvas.addEventListener('click', e=>{
+      if(!running || ammo<=0) return; 
+      
+      const rect=canvas.getBoundingClientRect(); 
+      const sx=e.clientX-rect.left, sy=e.clientY-rect.top; 
+      const dst=screenToWorld(sx,sy);
+      
+      if(shotTimer>0) return; 
+      
+      const src = { x: canvas.width/2, y: canvas.height-40 }; // Fixed: complete the constructor call
+      shots.push(new CaShot(src,dst)); 
+      ammo--; 
+      shotTimer=SHOT_COOLDOWN; 
+      updateHUD();
+    });
+
+    // -------------------- HUD Updates --------------------
+    function updateHUD(){ 
+      document.getElementById('uiWave').textContent = wave; 
+      document.getElementById('uiScore').textContent = score; 
+      
+      const ammoElement = document.getElementById('uiAmmo');
+      ammoElement.textContent = ammo;
+      
+      // Color-code ammo based on remaining count
+      const ammoStatus = document.querySelector('#uiAmmo').parentElement;
+      if(ammo <= 2) {
+        ammoStatus.style.color = '#ef5350'; // Red - critical
+      } else if(ammo <= 4) {
+        ammoStatus.style.color = '#ffd54f'; // Yellow - warning
+      } else {
+        ammoStatus.style.color = '#fff'; // White - normal
+      }
+    }
+
+    // -------------------- Game Flow --------------------
+    function startWave(){ 
+      if(running) return;
+      running=true; 
+      ammo=SHOT_AMMO_PER_WAVE + Math.floor((wave-1)*0.5); 
+      waveStartTime = lastStamp;
+      updateHUD(); 
+    }
+    
+    function nextWave(){ 
+      wave++; 
+      ammo = SHOT_AMMO_PER_WAVE + Math.floor((wave-1)*0.5); 
+      aboveTime=0; 
+      bestExcitability=Infinity; 
+      waveStartTime = lastStamp;
+      // Clear some state for new wave
+      spikes = [];
+      shots = [];
+      synapses.forEach(s => s.G *= 0.3); // Reduce glutamate between waves
+      updateHUD();
+      
+      // Show wave advancement message
+      setTimeout(() => {
+        alert(`Wave ${wave} begins! Spike rate increased.`);
+      }, 100);
+    }
+    
+    function resetAll(){ 
+      running=false; 
+      wave=1; 
+      score=0; 
+      ammo=0; 
+      aboveTime=0; 
+      bestExcitability=Infinity; 
+      waveStartTime=0;
+      spikes=[]; 
+      shots=[]; 
+      synapses=[]; 
+      axons=[]; 
+      generateWorld(); 
+      updateHUD(); 
+    }
+    
+    function gameOver(){ 
+      running=false; 
+      alert(`💥 Network runaway!\nFinal Wave: ${wave}\nFinal Score: ${score}`); 
+    }
+
+    function checkWaveComplete(currentTime) {
+      if(!running) return;
+      
+      const timeInWave = currentTime - waveStartTime;
+      const exc = excitabilitySum();
+      
+      // Lose condition 1: Run out of ammo with high excitability
+      if(ammo <= 0 && exc > EXCIT_THRESH * 0.5) {
+        setTimeout(() => {
+          alert(`💥 Out of ammunition!\nExcitability too high to survive.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+          running = false;
+        }, 100);
+        return;
+      }
+      
+      // Lose condition 2: Out of ammo and can't complete wave time
+      if(ammo <= 0 && timeInWave < waveDuration * 0.7) {
+        setTimeout(() => {
+          alert(`⏰ Out of ammunition too early!\nCouldn't survive the wave.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+          running = false;
+        }, 100);
+        return;
+      }
+      
+      // Win condition: survive wave duration with reasonable control OR run out of ammo late but with low excitability
+      if((timeInWave >= waveDuration && exc < EXCIT_THRESH * 0.8) || 
+         (ammo <= 0 && timeInWave >= waveDuration * 0.7 && exc < EXCIT_THRESH * 0.5)) {
+        setTimeout(() => {
+          const survivalBonus = ammo > 0 ? Math.floor(ammo * 50) : 0; // Bonus for leftover ammo
+          const efficiencyBonus = Math.floor(1000/wave);
+          alert(`Wave ${wave} Complete!\nScore: ${score}\nAmmo Bonus: ${survivalBonus}\nWave Bonus: ${efficiencyBonus}`);
+          score += survivalBonus + efficiencyBonus;
+          nextWave();
+        }, 100);
+      }
+    }
+
+    // -------------------- Main Animation Loop --------------------
+    function animate(t=0){ 
+      const ts=t*0.001; 
+      const dt = Math.min(0.033, lastStamp? ts-lastStamp : 0.016); 
+      lastStamp=ts; 
+      
+      if(!running){ 
+        requestAnimationFrame(animate); 
+        return; 
+      }
+      
+      // Update timers
+      shotTimer = Math.max(0, shotTimer-dt);
+      
+      // Update game systems
+      spawnSpikes(dt);
+      spikes.forEach(s=>s.step(dt)); 
+      spikes = spikes.filter(s=>!s.dead);
+      
+      shots.forEach(sh=>sh.step(dt)); 
+      shots = shots.filter(s=>!s.dead);
+      
+      updateGlutamate(dt);
+      astrocyte.update(dt);
+
+      // Scoring and wave progression
+      const exc = excitabilitySum(); 
+      bestExcitability = Math.min(bestExcitability, exc);
+      score += Math.max(0, Math.floor(5 - exc*0.02)*dt*10);
+      
+      checkWaveComplete(ts);
+
+      // Lose condition tracking
+      const meter = document.getElementById('excMeter'); 
+      const pct = clamp(exc/EXCIT_THRESH*100,0,100); 
+      meter.style.width = Math.min(100,pct)+'%';
+      
+      if(exc>EXCIT_THRESH) { 
+        aboveTime += dt; 
+      } else { 
+        aboveTime = Math.max(0, aboveTime-dt*0.5); 
+      }
+      
+      if(aboveTime>=LOSE_HOLD){ 
+        gameOver(); 
+        requestAnimationFrame(animate);
+        return;
+      }
+
+      // Render everything
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawGlutamateBackground(); // Draw glutamate zones first (background)
+      drawAxons();
+      astrocyte.draw();
+      drawSynapses();
+      drawSpikes();
+      drawShots();
+
+      requestAnimationFrame(animate);
+    }
+
+    // -------------------- Drawing Functions --------------------
+    function drawGlutamateBackground() {
+      if(synapses.length === 0) return;
+      
+      ctx.save();
+      
+      // Create glutamate concentration zones with much higher visibility
+      synapses.forEach(s => {
+        if(s.G > 0.05) { // Show even lower concentrations
+          const intensity = clamp(s.G / 6, 0, 1);
+          const radius = 30 + intensity * 40; // Larger zones for better visibility
+          
+          // Create radial gradient for glutamate zone
+          const gradient = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, radius);
+          
+          if(intensity < 0.2) {
+            // Low concentration - more visible blue
+            gradient.addColorStop(0, `rgba(100, 150, 255, ${0.3 + intensity * 0.4})`);
+            gradient.addColorStop(0.7, `rgba(100, 150, 255, ${0.1 + intensity * 0.2})`);
+            gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+          } else if(intensity < 0.5) {
+            // Medium concentration - prominent purple
+            gradient.addColorStop(0, `rgba(200, 100, 255, ${0.4 + intensity * 0.4})`);
+            gradient.addColorStop(0.7, `rgba(200, 100, 255, ${0.2 + intensity * 0.3})`);
+            gradient.addColorStop(1, 'rgba(200, 100, 255, 0)');
+          } else {
+            // High concentration - very prominent red
+            gradient.addColorStop(0, `rgba(255, 80, 80, ${0.5 + intensity * 0.4})`);
+            gradient.addColorStop(0.6, `rgba(255, 80, 80, ${0.3 + intensity * 0.3})`);
+            gradient.addColorStop(1, 'rgba(255, 80, 80, 0)');
+          }
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Add extra emphasis for very high concentrations
+          if(intensity > 0.7) {
+            const innerGradient = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, radius * 0.4);
+            innerGradient.addColorStop(0, `rgba(255, 50, 50, ${intensity * 0.6})`);
+            innerGradient.addColorStop(1, 'rgba(255, 50, 50, 0)');
+            ctx.fillStyle = innerGradient;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      });
+      
+      ctx.restore();
+    }
+
+    function drawAxons(){ 
+      ctx.save(); 
+      ctx.strokeStyle='#ff6b35'; 
+      ctx.lineWidth=3; 
+      ctx.lineCap='round';
+      ctx.lineJoin='round';
+      
+      axons.forEach(ax=>{ 
+        if(ax.points.length < 2) return;
+        
+        ctx.beginPath(); 
+        ctx.moveTo(ax.points[0].x, ax.points[0].y);
+        
+        // Use quadratic curves for smooth appearance
+        for(let i = 1; i < ax.points.length - 1; i++) {
+          const current = ax.points[i];
+          const next = ax.points[i + 1];
+          const midX = (current.x + next.x) / 2;
+          const midY = (current.y + next.y) / 2;
+          
+          ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+        }
+        
+        // Draw to the final point
+        const lastPoint = ax.points[ax.points.length - 1];
+        ctx.lineTo(lastPoint.x, lastPoint.y);
+        
+        ctx.stroke(); 
+      }); 
+      ctx.restore(); 
+    }
+    
+    function drawSpikes(){ 
+      ctx.save(); 
+      spikes.forEach(s=>{ 
+        const p=s.pos; 
+        const speed = s.speed / SPIKE_SPEED; // Normalize speed for visual effect
+        
+        // Color based on speed - faster spikes are more dangerous
+        if(speed > 1.1) {
+          ctx.fillStyle='#ff4444'; // Fast spikes are red
+        } else if(speed > 0.95) {
+          ctx.fillStyle='#ffaa44'; // Medium spikes are orange  
+        } else {
+          ctx.fillStyle='#ffffff'; // Slow spikes are white
+        }
+        
+        const size = 2 + speed * 2; // Size indicates speed
+        ctx.beginPath(); 
+        ctx.arc(p.x,p.y,size,0,Math.PI*2); 
+        ctx.fill(); 
+        
+        // Add trailing effect for fast spikes
+        if(speed > 1.05) {
+          ctx.globalAlpha = 0.3;
+          const trail = s.axon.posAt(Math.max(0, s.u - 0.02));
+          ctx.beginPath(); 
+          ctx.arc(trail.x,trail.y,size*0.7,0,Math.PI*2); 
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
+        }
+      }); 
+      ctx.restore(); 
+    }
+    
+    function drawSynapses(){ 
+      synapses.forEach(s=>s.draw()); 
+    }
+    
+    function drawShots(){ 
+      shots.forEach(s=>s.draw()); 
+    }
+
+    // -------------------- World Initialization --------------------
+    function generateWorld(){ 
+      astrocyte = new AstrocyteStructure(canvas.width/2, canvas.height/2, 120); 
+      generateAxonField(); 
+      renderBoard(); 
+    }
+
+    // -------------------- UI Event Handlers --------------------
+    document.getElementById('startBtn').addEventListener('click', ()=>{ 
+      if(!running){ 
+        startWave(); 
+      }
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    
+    document.getElementById('saveScoreBtn').addEventListener('click', ()=>{ 
+      const name=(document.getElementById('playerName').value||'Player').trim().slice(0,16); 
+      addScore(name,Math.floor(score)); 
+    });
+    
+    document.getElementById('clearBoardBtn').addEventListener('click', clearBoard);
+
+    // -------------------- Canvas Management --------------------
+    function resizeCanvas(){ 
+      const area=document.querySelector('.simulation-area'); 
+      const newWidth = area.clientWidth;
+      const newHeight = area.clientHeight;
+      
+      // Only regenerate if size actually changed significantly
+      if(Math.abs(canvas.width - newWidth) > 10 || Math.abs(canvas.height - newHeight) > 10) {
+        canvas.width = newWidth; 
+        canvas.height = newHeight; 
+        generateWorld(); 
+      }
+    }
+
+    // -------------------- Initialization --------------------
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', ()=>{ 
+      resizeCanvas(); 
+      updateHUD(); 
+      requestAnimationFrame(animate); 
+    });
+  </script>
 </body>
 </html>

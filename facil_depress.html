@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Facilitation & Depression — Two Interactive Pages</title>
+<link rel="icon" href="data:,">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  body{background:#ffffff;color:#111827}
+  .card{background:#ffffff;border:1px solid #e5e7eb;border-radius:14px}
+  .subtitle{color:#374151}
+  .kbd{background:#f3f4f6;border:1px solid #e5e7eb;padding:.15rem .4rem;border-radius:.35rem}
+  .legend-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .section-title{font-weight:700;font-size:1.1rem}
+  .help{font-size:.95rem;color:#374151}
+  .diagram{display:flex;gap:.75rem;align-items:center;font-size:.95rem}
+  .bubble{width:14px;height:14px;border-radius:50%;background:#60a5fa;border:2px solid #1d4ed8}
+  .bubble.empty{background:#fde68a;border-color:#f59e0b}
+  .pill{display:inline-block;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:999px;padding:.2rem .6rem;margin-right:.25rem}
+</style>
+</head>
+<body>
+<div class="container py-4">
+  <h1 class="mb-2">Synaptic Short‑Term Plasticity</h1>
+  <div class="subtitle mb-3">Two beginner‑friendly pages: <strong>Facilitation</strong> and <strong>Depression</strong>. Use the tabs below.</div>
+
+  <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="fac-tab" data-bs-toggle="pill" data-bs-target="#fac" type="button" role="tab" aria-controls="fac" aria-selected="true">Facilitation</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="dep-tab" data-bs-toggle="pill" data-bs-target="#dep" type="button" role="tab" aria-controls="dep" aria-selected="false">Depression</button></li>
+  </ul>
+
+  <div class="tab-content" id="pills-tabContent">
+
+    <!-- Facilitation PAGE -->
+    <div class="tab-pane fade show active" id="fac" role="tabpanel" aria-labelledby="fac-tab" tabindex="0">
+      <div class="row g-4 align-items-stretch">
+        <div class="col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <h3 class="mb-1">Facilitation</h3>
+            <p class="help">Release probability <em>builds up during a burst</em>, so later spikes produce bigger responses. Think: <span class="pill">burst detector</span>.</p>
+
+            <div class="diagram mb-2"><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><span>Ca²⁺ builds up → higher Pr</span></div>
+
+            <div class="section-title mt-3">Beginner controls</div>
+            <label class="form-label">Spikes (count): <span id="fac_nVal" class="kbd">10</span></label>
+            <input id="fac_n" type="range" min="1" max="60" step="1" value="10" class="form-range">
+            <label class="form-label">Frequency (Hz): <span id="fac_fVal" class="kbd">20</span></label>
+            <input id="fac_f" type="range" min="1" max="200" step="1" value="20" class="form-range">
+
+            <div class="section-title mt-3">Synapse</div>
+            <label class="form-label">Baseline Pr (U₀): <span id="fac_U0Val" class="kbd">0.1</span></label>
+            <input id="fac_U0" type="range" min="0.02" max="0.6" step="0.01" value="0.10" class="form-range">
+            <label class="form-label">Facilitation τ<sub>facil</sub> (ms): <span id="fac_tfacVal" class="kbd">800</span></label>
+            <input id="fac_tfac" type="range" min="0" max="1500" step="50" value="800" class="form-range">
+
+            <div class="section-title mt-3">Quantal / connections</div>
+            <label class="form-label"># synapses (active contacts): <span id="fac_SVal" class="kbd">1</span></label>
+            <input id="fac_S" type="range" min="1" max="50" step="1" value="1" class="form-range">
+            <label class="form-label">Quantal size (q, a.u.): <span id="fac_qVal" class="kbd">1.0</span></label>
+            <input id="fac_q" type="range" min="0.1" max="5" step="0.1" value="1.0" class="form-range">
+
+            <div class="d-grid gap-2 mt-3">
+              <button id="fac_preset_bg" class="btn btn-outline-secondary">Example: sparse</button>
+              <button id="fac_preset_burst" class="btn btn-outline-primary">Example: burst</button>
+              <button id="fac_run" class="btn btn-primary">Run</button>
+            </div>
+
+            <hr>
+            <div class="help">Tip: Increase frequency or U₀ to watch responses grow later in the train.</div>
+          </div></div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card h-100"><div class="card-body">
+            <h4 class="mb-1">Presynaptic voltage (repeats)</h4>
+            <canvas id="fac_pre" height="120" aria-label="presynaptic voltage trace"></canvas>
+            <div class="subtitle mb-2">Black ticks = spikes. The trace continuously scrolls and repeats.</div>
+
+            <h4 class="mb-1 mt-3">Postsynaptic response</h4>
+            <div class="subtitle mb-2">Simulated EPSP-like signal including facilitation, quantal size, and # synapses.</div>
+            <canvas id="fac_post" height="200" aria-label="postsynaptic response"></canvas>
+
+            <div class="row g-3 mt-3">
+              <div class="col-md-6"><div class="p-2 border rounded"><div class="fw-semibold">Mean Pr across train</div><div id="fac_meanPr" class="help"></div></div></div>
+              <div class="col-md-6"><div class="p-2 border rounded"><div class="fw-semibold">Estimated released quanta</div><div id="fac_quanta" class="help"></div></div></div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Depression PAGE -->
+    <div class="tab-pane fade" id="dep" role="tabpanel" aria-labelledby="dep-tab" tabindex="0">
+      <div class="row g-4 align-items-stretch">
+        <div class="col-lg-4">
+          <div class="card h-100"><div class="card-body">
+            <h3 class="mb-1">Depression</h3>
+            <p class="help">Readily releasable pool (RRP) and vesicle resources get used up during repeated activity → responses <em>shrink</em>. Think: <span class="pill">fatigue / safety brake</span>.</p>
+
+            <div class="diagram mb-2"><div class="bubble empty"></div><div class="bubble empty"></div><div class="bubble"></div><span>Vesicle pool depletes with spikes</span></div>
+
+            <div class="section-title mt-3">Beginner controls</div>
+            <label class="form-label">Spikes (count): <span id="dep_nVal" class="kbd">15</span></label>
+            <input id="dep_n" type="range" min="1" max="80" step="1" value="15" class="form-range">
+            <label class="form-label">Frequency (Hz): <span id="dep_fVal" class="kbd">20</span></label>
+            <input id="dep_f" type="range" min="1" max="200" step="1" value="20" class="form-range">
+
+            <div class="section-title mt-3">Synapse</div>
+            <label class="form-label">Baseline Pr (U₀): <span id="dep_U0Val" class="kbd">0.5</span></label>
+            <input id="dep_U0" type="range" min="0.05" max="0.9" step="0.01" value="0.50" class="form-range">
+            <label class="form-label">Recovery τ<sub>rec</sub> (ms): <span id="dep_trecVal" class="kbd">800</span></label>
+            <input id="dep_trec" type="range" min="50" max="2000" step="50" value="800" class="form-range">
+            <label class="form-label">RRP size (sites × vesicles): <span id="dep_rrpVal" class="kbd">10</span></label>
+            <input id="dep_rrp" type="range" min="1" max="200" step="1" value="10" class="form-range">
+
+            <div class="section-title mt-3">Quantal / connections</div>
+            <label class="form-label"># synapses: <span id="dep_SVal" class="kbd">1</span></label>
+            <input id="dep_S" type="range" min="1" max="50" step="1" value="1" class="form-range">
+            <label class="form-label">Quantal size (q, a.u.): <span id="dep_qVal" class="kbd">1.0</span></label>
+            <input id="dep_q" type="range" min="0.1" max="5" step="0.1" value="1.0" class="form-range">
+
+            <div class="d-grid gap-2 mt-3">
+              <button id="dep_preset_bg" class="btn btn-outline-secondary">Example: rapid fatigue</button>
+              <button id="dep_preset_slow" class="btn btn-outline-primary">Example: slow train</button>
+              <button id="dep_run" class="btn btn-primary">Run</button>
+            </div>
+
+            <hr>
+            <div class="help">Tip: Increase frequency or U₀, or reduce RRP to exaggerate depression.</div>
+          </div></div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card h-100"><div class="card-body">
+            <h4 class="mb-1">Presynaptic voltage (repeats)</h4>
+            <canvas id="dep_pre" height="120"></canvas>
+            <div class="subtitle mb-2">Black ticks = spikes. The trace continuously scrolls and repeats.</div>
+
+            <h4 class="mb-1 mt-3">Postsynaptic response</h4>
+            <div class="subtitle mb-2">EPSP-like signal with depression due to RRP depletion and recovery.</div>
+            <canvas id="dep_post" height="200"></canvas>
+
+            <div class="row g-3 mt-3">
+              <div class="col-md-6"><div class="p-2 border rounded"><div class="fw-semibold">Mean Pr across train</div><div id="dep_meanPr" class="help"></div></div></div>
+              <div class="col-md-6"><div class="p-2 border rounded"><div class="fw-semibold">Estimated released quanta</div><div id="dep_quanta" class="help"></div></div></div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---------- Shared helpers ----------
+function makeSpikeTimes(n, fHz){
+  if(n<=1) return [0];
+  const isi_ms = 1000/Math.max(1,fHz);
+  return Array.from({length:n}, (_,i)=> Math.round(i*isi_ms));
+}
+
+function rollingVoltage(times, T, amp=60, baseline=-65){
+  // Create a voltage trace with spikes (brief peaks) over window 0..T
+  const V = new Float32Array(T).fill(baseline);
+  for(let i=0;i<times.length;i++){
+    const t = times[i];
+    if(t>=0 && t<T){
+      V[t] = baseline + amp;
+      for(let k=1;k<5;k++){
+        const idx = t + k;
+        if(idx < T) V[idx] = baseline + amp*Math.exp(-k/2);
+      }
+    }
+  }
+  return Array.from(V);
+}
+
+function expKernel(arr, t0, amp, tau, T){
+  for(let t=t0;t<Math.min(T,t0+10*tau);t++) arr[t]+= amp*Math.exp(-(t-t0)/tau);
+}
+
+// Tsodyks–Markram step (facilitation+depression in one); set tau_facil=0 to disable facilitation
+function TM_on_spike(state, params, isi){
+  const { U0, tau_rec, tau_facil } = params;
+  let { R, u } = state;
+
+  const expRec = Math.exp(-isi / Math.max(1, tau_rec || 1e9));
+  const expFac = Math.exp(-isi / Math.max(1, tau_facil || 1e9));
+
+  // recovery of resources
+  R = 1 - (1 - R) * expRec;
+
+  // decay of facilitation variable back to baseline
+  u = (tau_facil > 0) ? (U0 + (u - U0) * expFac) : U0;
+
+  // amount released
+  const release = u * R;
+
+  // update state
+  R = R - release;
+  u = (tau_facil > 0) ? (u + U0 * (1 - u)) : U0;
+
+  // return new state and values
+  return {
+    state: { R, u },
+    release: release,
+    Pr: u
+  };
+}
+
+function simulatePostsyn(spikeTimes, T, cfg){
+  // Stochastic quantal release (binomial) layered on top of TM state
+  // Returns {post, meanPr, quanta, failures}
+  const post = new Float32Array(T).fill(0);
+  let st = { R: 1, u: cfg.U0 };
+  let totalPr = 0, totalQuanta = 0, failures = 0;
+
+  for (let i = 0; i < spikeTimes.length; i++){
+    const t = spikeTimes[i];
+    const isi = (i === 0) ? t : (t - spikeTimes[i - 1]);
+    const step = TM_on_spike(st, cfg, isi);
+    st = step.state;
+
+    // Per-site probability (clamped) and number of releasing sites
+    const Pr_site = Math.max(0, Math.min(1, step.Pr));
+    const n_sites = Math.max(1, cfg.S);
+    const cap = (typeof cfg.RRP === 'number') ? Math.min(cfg.RRP, n_sites) : n_sites;
+
+    // Binomial draw for successes
+    let succ = 0;
+    for (let s = 0; s < cap; s++){
+      if (Math.random() < Pr_site) succ++;
+    }
+    if (succ === 0) failures++;
+
+    totalPr += Pr_site;
+    totalQuanta += succ;
+
+    // Convolve successes into postsynaptic trace
+    if (succ > 0){
+      expKernel(post, t, cfg.q * succ, cfg.tauSyn, T);
+    }
+  }
+  return {
+    post: Array.from(post),
+    meanPr: (totalPr / Math.max(1, spikeTimes.length)).toFixed(3),
+    quanta: totalQuanta.toFixed(1),
+    failures: failures
+  };
+}
+
+// ---------- FACILITATION page logic ----------
+let facPreChart, facPostChart, facTimer, facCache={};
+function facGather(){
+  return {
+    n: parseInt(document.getElementById('fac_n').value,10),
+    f: parseFloat(document.getElementById('fac_f').value),
+    U0: parseFloat(document.getElementById('fac_U0').value),
+    tau_facil: parseFloat(document.getElementById('fac_tfac').value),
+    tau_rec: 150, // moderate depression
+    tauSyn: 12,
+    S: parseInt(document.getElementById('fac_S').value,10),
+    q: parseFloat(document.getElementById('fac_q').value),
+    RRP: 50
+  };
+}
+function facBindLabels(){
+  const pairs = [
+    ['fac_n','fac_nVal',''],['fac_f','fac_fVal',''],['fac_U0','fac_U0Val',''],['fac_tfac','fac_tfacVal',''],['fac_S','fac_SVal',''],['fac_q','fac_qVal','']
+  ];
+  for(let i=0;i<pairs.length;i++){
+    const [id,lab] = pairs[i];
+    const el = document.getElementById(id);
+    const lb = document.getElementById(lab);
+    lb.textContent = el.value;
+    el.addEventListener('input', ()=> lb.textContent = el.value);
+  }
+}
+function facInitCharts(){
+  facPreChart = new Chart(document.getElementById('fac_pre'), {
+    type:'line',
+    data:{labels:[], datasets:[{label:'V_pre', data:[], borderWidth:2, borderColor:'#111827', pointRadius:0}]},
+    options:{
+      animation:false,
+      scales:{
+        x:{type:'linear', min:0, max:1000, ticks:{stepSize:200}},
+        y:{display:false}
+      },
+      plugins:{legend:{display:false}},
+      elements:{line:{tension:0}}
+    }
+  });
+  facPostChart = new Chart(document.getElementById('fac_post'), {
+    type:'line',
+    data:{labels:[], datasets:[{label:'EPSP', data:[], borderWidth:2, pointRadius:0}]},
+    options:{
+      animation:false,
+      scales:{ x:{type:'linear', min:0, max:1000, ticks:{stepSize:200}} },
+      plugins:{legend:{display:false}},
+      elements:{line:{tension:0}}
+    }
+  });
+}
+//       ]
+//     },
+//     options: {
+//       animation: false,
+//       scales: { y: { display: false }, x: { display: false } },
+//       plugins: { legend: { display: false } },
+//       elements: { line: { tension: 0 } }
+//     }
+//   });
+//   var postCtx = document.getElementById('fac_post');
+//   facPostChart = new Chart(postCtx, {
+//     type: 'line',
+//     data: {
+//       labels: [],
+//       datasets: [
+//         { label: 'EPSP', data: [], borderWidth: 2, borderColor: '#0d6efd', pointRadius: 0 }
+//       ]
+//     },
+//     options: {
+//       animation: false,
+//       plugins: { legend: { display: false } },
+//       elements: { line: { tension: 0 } }
+//     }
+//   });
+// }
+function facRender(){
+  const cfg = facGather();
+  const T = 1000; // fixed 1 s window
+  const spikes = makeSpikeTimes(cfg.n, cfg.f);
+  const V = rollingVoltage(spikes, T);
+  const sim = simulatePostsyn(spikes, T, cfg);
+  facCache = { T, V, post: sim.post, spikes, meanPr: sim.meanPr, quanta: sim.quanta };
+  const labels = Array.from({length:T},(_,i)=>i);
+  facPreChart.data.labels = labels; facPreChart.data.datasets[0].data = V; facPreChart.update();
+  facPostChart.data.labels = labels; facPostChart.data.datasets[0].data = sim.post; facPostChart.update();
+  document.getElementById('fac_meanPr').textContent = sim.meanPr;
+  document.getElementById('fac_quanta').innerHTML = `Quanta: <strong>${sim.quanta}</strong>  |  Failures: <strong>${sim.failures}</strong>`;
+}
+function facStartLoop(){
+  if(facTimer) clearInterval(facTimer);
+  let i = 0;
+  facTimer = setInterval(()=>{
+    if(!facCache.V) return;
+    // append next point up to i, then advance
+    const sliceV = facCache.V.slice(0, i+1);
+    const slicePost = facCache.post.slice(0, i+1);
+    facPreChart.data.labels = Array.from({length:sliceV.length},(_,k)=>k);
+    facPostChart.data.labels = Array.from({length:slicePost.length},(_,k)=>k);
+    facPreChart.data.datasets[0].data = sliceV;
+    facPostChart.data.datasets[0].data = slicePost;
+    facPreChart.update();
+    facPostChart.update();
+    i++;
+    if(i >= facCache.T){
+      // reset for next second
+      i = 0;
+      facPreChart.data.labels = [];
+      facPostChart.data.labels = [];
+      facPreChart.data.datasets[0].data = [];
+      facPostChart.data.datasets[0].data = [];
+      facPreChart.update();
+      facPostChart.update();
+    }
+  }, 20); // ~50 fps
+}
+
+// ---------- DEPRESSION page logic ----------
+let depPreChart, depPostChart, depTimer, depCache={};
+function depGather(){
+  return {
+    n: parseInt(document.getElementById('dep_n').value,10),
+    f: parseFloat(document.getElementById('dep_f').value),
+    U0: parseFloat(document.getElementById('dep_U0').value),
+    tau_facil: 0, // none by default
+    tau_rec: parseFloat(document.getElementById('dep_trec').value),
+    tauSyn: 12,
+    S: parseInt(document.getElementById('dep_S').value,10),
+    q: parseFloat(document.getElementById('dep_q').value),
+    RRP: parseInt(document.getElementById('dep_rrp').value,10)
+  };
+}
+function depBindLabels(){
+  const pairs = [
+    ['dep_n','dep_nVal',''],['dep_f','dep_fVal',''],['dep_U0','dep_U0Val',''],['dep_trec','dep_trecVal',''],['dep_rrp','dep_rrpVal',''],['dep_S','dep_SVal',''],['dep_q','dep_qVal','']
+  ];
+  for(let i=0;i<pairs.length;i++){
+    const [id,lab] = pairs[i];
+    const el = document.getElementById(id);
+    const lb = document.getElementById(lab);
+    lb.textContent = el.value;
+    el.addEventListener('input', ()=> lb.textContent = el.value);
+  }
+}
+function depInitCharts(){
+  depPreChart = new Chart(document.getElementById('dep_pre'), {
+    type:'line',
+    data:{labels:[], datasets:[{label:'V_pre', data:[], borderWidth:2, borderColor:'#111827', pointRadius:0}]},
+    options:{
+      animation:false,
+      scales:{ x:{type:'linear', min:0, max:1000, ticks:{stepSize:200}}, y:{display:false} },
+      plugins:{legend:{display:false}},
+      elements:{line:{tension:0}}
+    }
+  });
+  depPostChart = new Chart(document.getElementById('dep_post'), {
+    type:'line',
+    data:{labels:[], datasets:[{label:'EPSP', data:[], borderWidth:2, pointRadius:0}]},
+    options:{
+      animation:false,
+      scales:{ x:{type:'linear', min:0, max:1000, ticks:{stepSize:200}} },
+      plugins:{legend:{display:false}},
+      elements:{line:{tension:0}}
+    }
+  });
+}
+function depRender(){
+  const cfg = depGather();
+  const T = 1000;
+  const spikes = makeSpikeTimes(cfg.n, cfg.f);
+  const V = rollingVoltage(spikes, T);
+  const sim = simulatePostsyn(spikes, T, cfg);
+  depCache = { T, V, post: sim.post, spikes, meanPr: sim.meanPr, quanta: sim.quanta };
+  const labels = Array.from({length:T},(_,i)=>i);
+  depPreChart.data.labels = labels; depPreChart.data.datasets[0].data = V; depPreChart.update();
+  depPostChart.data.labels = labels; depPostChart.data.datasets[0].data = sim.post; depPostChart.update();
+  document.getElementById('dep_meanPr').textContent = sim.meanPr;
+  document.getElementById('dep_quanta').innerHTML = `Quanta: <strong>${sim.quanta}</strong>  |  Failures: <strong>${sim.failures}</strong>`;
+}
+function depStartLoop(){
+  if(depTimer) clearInterval(depTimer);
+  let i = 0;
+  depTimer = setInterval(()=>{
+    if(!depCache.V) return;
+    const sliceV = depCache.V.slice(0, i+1);
+    const slicePost = depCache.post.slice(0, i+1);
+    depPreChart.data.labels = Array.from({length:sliceV.length},(_,k)=>k);
+    depPostChart.data.labels = Array.from({length:slicePost.length},(_,k)=>k);
+    depPreChart.data.datasets[0].data = sliceV;
+    depPostChart.data.datasets[0].data = slicePost;
+    depPreChart.update();
+    depPostChart.update();
+    i++;
+    if(i >= depCache.T){
+      i = 0;
+      depPreChart.data.labels = [];
+      depPostChart.data.labels = [];
+      depPreChart.data.datasets[0].data = [];
+      depPostChart.data.datasets[0].data = [];
+      depPreChart.update();
+      depPostChart.update();
+    }
+  }, 20);
+}
+
+// ---------- Presets, wiring ----------
+function bindPresets(){
+  document.getElementById('fac_preset_bg').addEventListener('click',()=>{
+    document.getElementById('fac_n').value=6;
+    document.getElementById('fac_f').value=8;
+    document.getElementById('fac_U0').value=0.08;
+    document.getElementById('fac_tfac').value=1000;
+    document.getElementById('fac_S').value=1;
+    document.getElementById('fac_q').value=1.0;
+    facBindLabels();
+    facRender();
+  });
+  document.getElementById('fac_preset_burst').addEventListener('click',()=>{
+    document.getElementById('fac_n').value=20;
+    document.getElementById('fac_f').value=40;
+    document.getElementById('fac_U0').value=0.12;
+    document.getElementById('fac_tfac').value=900;
+    document.getElementById('fac_S').value=5;
+    document.getElementById('fac_q').value=1.2;
+    facBindLabels();
+    facRender();
+  });
+  document.getElementById('dep_preset_bg').addEventListener('click',()=>{
+    document.getElementById('dep_n').value=30;
+    document.getElementById('dep_f').value=30;
+    document.getElementById('dep_U0').value=0.6;
+    document.getElementById('dep_trec').value=800;
+    document.getElementById('dep_rrp').value=8;
+    document.getElementById('dep_S').value=2;
+    document.getElementById('dep_q').value=1.0;
+    depBindLabels();
+    depRender();
+  });
+  document.getElementById('dep_preset_slow').addEventListener('click',()=>{
+    document.getElementById('dep_n').value=20;
+    document.getElementById('dep_f').value=5;
+    document.getElementById('dep_U0').value=0.4;
+    document.getElementById('dep_trec').value=1500;
+    document.getElementById('dep_rrp').value=20;
+    document.getElementById('dep_S').value=1;
+    document.getElementById('dep_q').value=1.0;
+    depBindLabels();
+    depRender();
+  });
+}
+
+function bindRun(){
+  const restartFac = ()=>{ facRender(); facStartLoop(); };
+  const restartDep = ()=>{ depRender(); depStartLoop(); };
+  document.getElementById('fac_run').addEventListener('click', restartFac);
+  document.getElementById('dep_run').addEventListener('click', restartDep);
+  // Restart on settings change
+  ['fac_n','fac_f','fac_U0','fac_tfac','fac_S','fac_q'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', restartFac);
+  });
+  ['dep_n','dep_f','dep_U0','dep_trec','dep_rrp','dep_S','dep_q'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', restartDep);
+  });
+}
+// );
+//   document.getElementById('dep_run').addEventListener('click',()=>{ depRender(); });
+// }
+
+// Start everything
+window.addEventListener('DOMContentLoaded', ()=>{
+  facBindLabels();
+  depBindLabels();
+  bindPresets();
+  bindRun();
+  facInitCharts();
+  depInitCharts();
+  facRender();
+  facStartLoop();
+  depRender();
+  depStartLoop();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
