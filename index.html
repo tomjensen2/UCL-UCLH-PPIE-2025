@@ -47,6 +47,10 @@
         <h3>Player</h3>
         <label for="playerName">Name</label>
         <input id="playerName" type="text" placeholder="e.g., Ada" maxlength="16" />
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">
+          <input type="checkbox" id="unlimitedAmmoToggle" style="width:auto;margin:0" />
+          <span>Unlimited Ammo (Practice Mode)</span>
+        </label>
         <div class="row">
           <button id="startBtn">Start Wave ▶</button>
           <button id="resetBtn" class="alt">Reset 🔄</button>
@@ -78,7 +82,7 @@
         <div class="small" id="uiDebug"></div>
       </div>
       <div class="legend small">
-        Axons = orange lines • Spikes = white/orange/red pulses • Synapses = white dots • Glutamate = background color zones (blue→purple→red) • Ca²⁺ = yellow→orange→red • Ca shots = teal trails
+        <strong>How it works:</strong> Spikes trigger glutamate at synapses (blue→red zones). Fire Ca²⁺ shots to flood astrocyte with calcium, which BLOCKS glutamate release and speeds uptake. Green shields = protected synapses!
       </div>
     </div>
   </div>
@@ -105,6 +109,7 @@
     let bestExcitability = Infinity;
     let waveStartTime = 0;
     let waveDuration = 30; // seconds per wave
+    let unlimitedAmmo = false; // Toggle for unlimited ammo mode
 
     // Missile Command mode systems
     const AXON_COUNT = 5;
@@ -115,7 +120,7 @@
     const SHOT_BLAST_IP3 = 1.2;
     const SHOT_BLAST_CA = 0.8;
     const SHOT_COOLDOWN = 0.45;
-    const SHOT_AMMO_PER_WAVE = 8; // Increased base ammo to account for lose conditions
+    const SHOT_AMMO_PER_WAVE = 15; // Increased ammo for more forgiving gameplay
     const SPIKE_EFFECT_R = 26;
     const K_RELEASE = 0.085;
     const TAU_UPTAKE = 1.8;
@@ -226,7 +231,7 @@
       }
       
       update(dt){
-        const diff=params.diffusionRate*0.01, dec=params.decayRate, er=params.erRelease, 
+        const diff=params.diffusionRate*0.01, dec=params.decayRate * 2.5, er=params.erRelease, 
               ipT=params.ip3Threshold, spont=params.spontaneousRate, 
               cicrS=params.cicrSensitivity, cicrT=params.cicrThreshold, speed=params.simSpeed*0.1;
         const newCa=new Map(), newI=new Map(); 
@@ -239,22 +244,25 @@
         this.nodes.forEach((n,k)=>{
           const ca=n.calcium, ip=newI.get(k)||0;
           if(Math.random()<spont*speed*dt*60) newI.set(k, ip+0.3);
+          
+          // IP3-triggered ER release
           if(ip>ipT){ 
-            const rel=(ip-ipT)*er*speed; 
+            const rel=(ip-ipT)*er*speed*0.8; // Reduced release strength
             newCa.set(k,ca+rel*dt); 
-            newI.set(k, ip*(1-0.1*speed*dt)); 
+            newI.set(k, ip*(1-0.15*speed*dt)); // Faster IP3 consumption
           }
-          if(ca>cicrT && cicrS>0){ 
-            const c=(ca-cicrT)*cicrS*0.5*speed; 
+          
+          // CICR - but with saturation to prevent runaway
+          if(ca>cicrT && cicrS>0 && ca < 2.0){ // Only trigger CICR if Ca below saturation
+            const c=(ca-cicrT)*cicrS*0.3*speed; // Reduced CICR strength
             newCa.set(k,(newCa.get(k)||ca)+c*dt); 
-            newI.set(k,(newI.get(k)||ip)+c*0.3*dt); 
-            if(ca>cicrT*1.5){ 
-              newI.set(k,(newI.get(k)||ip)+ (ca-cicrT*1.5)*0.4*speed*dt ); 
-            } 
+            newI.set(k,(newI.get(k)||ip)+c*0.2*dt); // Reduced IP3 production
           }
-          const decF = dec/(1+ca*0.5); 
-          newCa.set(k,(newCa.get(k)||ca)*(1-decF*dt)); 
-          newI.set(k,(newI.get(k)||ip)*(1-0.05*dt));
+          
+          // Strong exponential decay - higher concentrations decay faster
+          const decayRate = dec * (1 + ca * 0.3); // Now high Ca decays FASTER
+          newCa.set(k,(newCa.get(k)||ca)*(1-decayRate*dt)); 
+          newI.set(k,(newI.get(k)||ip)*(1-0.12*dt)); // Faster IP3 decay
         });
         
         // Neighbor diffusion
@@ -403,17 +411,40 @@
       constructor(p){ 
         this.x=p.x; 
         this.y=p.y; 
-        this.G=0; 
+        this.G=0;
+        this.protectionLevel=0; // Visual indicator of calcium protection (0-1)
       }
       
       draw(){ 
-        // Simple white dots for synapses - glutamate shown via background
+        // Base synapse - white dot
         ctx.fillStyle='#ffffff'; 
         ctx.beginPath(); 
         ctx.arc(this.x,this.y,2,0,Math.PI*2); 
         ctx.fill(); 
         
-        // Optional: small outline to make them more visible
+        // Show protection shield when calcium is present
+        if(this.protectionLevel > 0.1) {
+          const shieldRadius = 8 + this.protectionLevel * 6;
+          const shieldAlpha = 0.3 + this.protectionLevel * 0.4;
+          
+          // Green shield glow
+          ctx.strokeStyle=`rgba(100, 255, 150, ${shieldAlpha})`;
+          ctx.lineWidth=2;
+          ctx.beginPath(); 
+          ctx.arc(this.x,this.y,shieldRadius,0,Math.PI*2); 
+          ctx.stroke();
+          
+          // Inner glow for strong protection
+          if(this.protectionLevel > 0.5) {
+            ctx.strokeStyle=`rgba(100, 255, 150, ${shieldAlpha * 0.5})`;
+            ctx.lineWidth=1;
+            ctx.beginPath(); 
+            ctx.arc(this.x,this.y,shieldRadius + 3,0,Math.PI*2); 
+            ctx.stroke();
+          }
+        }
+        
+        // Small outline for visibility
         ctx.strokeStyle='#333333';
         ctx.lineWidth=1;
         ctx.beginPath(); 
@@ -475,25 +506,29 @@
       const w=canvas.width, h=canvas.height; 
       const margin=80;
       
-      for(let i=0;i<AXON_COUNT;i++){
-        const y1 = margin + (i+0.5)*( (h-2*margin)/AXON_COUNT );
+      // Generate 5 axons but centered (skip outer positions)
+      const totalPositions = 7; // Calculate spacing for 7 positions but only use middle 5
+      
+      for(let i=1; i<=5; i++){ // Use positions 1-5 (skip 0 and 6)
+        // Vertical layout - distribute across width
+        const x1 = margin + (i+0.5)*( (w-2*margin)/totalPositions );
         
-        // Create smooth curved path using more control points
+        // Create smooth curved path using more control points (top to bottom)
         const controlPoints = [];
         const numPoints = 20; // More points for smoother curves
         
         for(let j = 0; j <= numPoints; j++) {
           const t = j / numPoints;
-          const x = margin + t * (w - 2*margin);
+          const y = margin + t * (h - 2*margin); // Top to bottom
           
-          // Create smooth sine wave variation
-          const amplitude = 30 + Math.sin(i * 0.8) * 20; // Vary amplitude per axon
-          const frequency = 0.015 + i * 0.002; // Slightly different frequencies
-          const phase = i * 0.7; // Phase offset per axon
+          // Create smooth sine wave variation in x direction
+          const amplitude = 25 + Math.sin(i * 0.6) * 15; // Vary amplitude per axon
+          const frequency = 0.012 + i * 0.0015; // Slightly different frequencies
+          const phase = i * 0.5; // Phase offset per axon
           
-          const wobble = Math.sin(x * frequency + phase) * amplitude;
+          const wobble = Math.sin(y * frequency + phase) * amplitude;
           
-          controlPoints.push({x: x, y: y1 + wobble});
+          controlPoints.push({x: x1 + wobble, y: y});
         }
         
         const ax = new AxonPath(controlPoints); 
@@ -519,22 +554,34 @@
     }
 
     function updateGlutamate(dt){
-      // Spikes increase glutamate near synapses
+      // First, update protection levels based on local calcium
+      for(const s of synapses) {
+        const Ca = astrocyte.sampleCa(s.x, s.y);
+        // Protection level tracks calcium concentration (normalized 0-1)
+        s.protectionLevel = clamp(Ca / 2, 0, 1); // Ca of 2+ = full protection
+      }
+      
+      // Spikes increase glutamate near synapses, INHIBITED by calcium
       for(const sp of spikes){ 
         const p=sp.pos; 
         for(const s of synapses){ 
           const d2=(s.x-p.x)**2 + (s.y-p.y)**2; 
           if(d2 < SPIKE_EFFECT_R*SPIKE_EFFECT_R){ 
-            const Ca = astrocyte.sampleCa(s.x,s.y); 
-            const I = sigmoid((Ca-CA_THETA)/CA_SLOPE); 
-            s.G += K_RELEASE*(1-I); 
+            const Ca = astrocyte.sampleCa(s.x,s.y);
+            // Sigmoid function: converts calcium to inhibition (0-1 range)
+            // When Ca is low, inhibition is ~0, so full glutamate release
+            // When Ca is high, inhibition approaches 1, blocking release
+            const inhibition = sigmoid((Ca-CA_THETA)/CA_SLOPE);
+            const release = K_RELEASE * (1 - inhibition); // Reduced release when Ca is high
+            s.G += release;
           } 
         } 
       }
       
       // Decay glutamate with Ca-dependent uptake
       for(const s of synapses){ 
-        const Ca = astrocyte.sampleCa(s.x,s.y); 
+        const Ca = astrocyte.sampleCa(s.x,s.y);
+        // Higher calcium = faster uptake (astrocyte clearing glutamate)
         const boost = 1 + UPTAKE_GAIN*sigmoid((Ca-CA_THETA)/CA_SLOPE); 
         const tau = TAU_UPTAKE/boost; 
         s.G -= (s.G/tau)*dt; 
@@ -609,7 +656,8 @@
 
     // -------------------- Input Handling --------------------
     canvas.addEventListener('click', e=>{
-      if(!running || ammo<=0) return; 
+      if(!running) return;
+      if(!unlimitedAmmo && ammo<=0) return; // Only check ammo if not in unlimited mode
       
       const rect=canvas.getBoundingClientRect(); 
       const sx=e.clientX-rect.left, sy=e.clientY-rect.top; 
@@ -617,9 +665,13 @@
       
       if(shotTimer>0) return; 
       
-      const src = { x: canvas.width/2, y: canvas.height-40 }; // Fixed: complete the constructor call
+      const src = { x: canvas.width/2, y: canvas.height-40 };
       shots.push(new CaShot(src,dst)); 
-      ammo--; 
+      
+      if(!unlimitedAmmo) {
+        ammo--; // Only decrement if not unlimited
+      }
+      
       shotTimer=SHOT_COOLDOWN; 
       updateHUD();
     });
@@ -630,11 +682,13 @@
       document.getElementById('uiScore').textContent = score; 
       
       const ammoElement = document.getElementById('uiAmmo');
-      ammoElement.textContent = ammo;
+      ammoElement.textContent = unlimitedAmmo ? '∞' : ammo;
       
-      // Color-code ammo based on remaining count
+      // Color-code ammo based on remaining count (only if not unlimited)
       const ammoStatus = document.querySelector('#uiAmmo').parentElement;
-      if(ammo <= 2) {
+      if(unlimitedAmmo) {
+        ammoStatus.style.color = '#81c784'; // Green for unlimited
+      } else if(ammo <= 2) {
         ammoStatus.style.color = '#ef5350'; // Red - critical
       } else if(ammo <= 4) {
         ammoStatus.style.color = '#ffd54f'; // Yellow - warning
@@ -697,31 +751,39 @@
       const timeInWave = currentTime - waveStartTime;
       const exc = excitabilitySum();
       
-      // Lose condition 1: Run out of ammo with high excitability
-      if(ammo <= 0 && exc > EXCIT_THRESH * 0.5) {
-        setTimeout(() => {
-          alert(`💥 Out of ammunition!\nExcitability too high to survive.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
-          running = false;
-        }, 100);
-        return;
+      // Skip ammo-based lose conditions in unlimited ammo mode
+      if(!unlimitedAmmo) {
+        // Lose condition 1: Run out of ammo with high excitability
+        if(ammo <= 0 && exc > EXCIT_THRESH * 0.5) {
+          setTimeout(() => {
+            alert(`💥 Out of ammunition!\nExcitability too high to survive.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+            running = false;
+          }, 100);
+          return;
+        }
+        
+        // Lose condition 2: Out of ammo and can't complete wave time
+        if(ammo <= 0 && timeInWave < waveDuration * 0.7) {
+          setTimeout(() => {
+            alert(`⏰ Out of ammunition too early!\nCouldn't survive the wave.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+            running = false;
+          }, 100);
+          return;
+        }
       }
       
-      // Lose condition 2: Out of ammo and can't complete wave time
-      if(ammo <= 0 && timeInWave < waveDuration * 0.7) {
-        setTimeout(() => {
-          alert(`⏰ Out of ammunition too early!\nCouldn't survive the wave.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
-          running = false;
-        }, 100);
-        return;
-      }
+      // Win condition: survive wave duration with reasonable control
+      // In unlimited mode, just need to survive the time with low excitability
+      const survivalThreshold = unlimitedAmmo ? waveDuration : waveDuration;
+      const canWin = (timeInWave >= survivalThreshold && exc < EXCIT_THRESH * 0.8) || 
+                     (!unlimitedAmmo && ammo <= 0 && timeInWave >= waveDuration * 0.7 && exc < EXCIT_THRESH * 0.5);
       
-      // Win condition: survive wave duration with reasonable control OR run out of ammo late but with low excitability
-      if((timeInWave >= waveDuration && exc < EXCIT_THRESH * 0.8) || 
-         (ammo <= 0 && timeInWave >= waveDuration * 0.7 && exc < EXCIT_THRESH * 0.5)) {
+      if(canWin) {
         setTimeout(() => {
-          const survivalBonus = ammo > 0 ? Math.floor(ammo * 50) : 0; // Bonus for leftover ammo
+          const survivalBonus = (!unlimitedAmmo && ammo > 0) ? Math.floor(ammo * 50) : 0;
           const efficiencyBonus = Math.floor(1000/wave);
-          alert(`Wave ${wave} Complete!\nScore: ${score}\nAmmo Bonus: ${survivalBonus}\nWave Bonus: ${efficiencyBonus}`);
+          const modeText = unlimitedAmmo ? ' (Practice Mode)' : '';
+          alert(`Wave ${wave} Complete!${modeText}\nScore: ${score}\nAmmo Bonus: ${survivalBonus}\nWave Bonus: ${efficiencyBonus}`);
           score += survivalBonus + efficiencyBonus;
           nextWave();
         }, 100);
@@ -931,9 +993,15 @@
     
     document.getElementById('resetBtn').addEventListener('click', resetAll);
     
+    document.getElementById('unlimitedAmmoToggle').addEventListener('change', (e) => {
+      unlimitedAmmo = e.target.checked;
+      updateHUD();
+    });
+    
     document.getElementById('saveScoreBtn').addEventListener('click', ()=>{ 
       const name=(document.getElementById('playerName').value||'Player').trim().slice(0,16); 
-      addScore(name,Math.floor(score)); 
+      const suffix = unlimitedAmmo ? ' (Practice)' : '';
+      addScore(name + suffix, Math.floor(score)); 
     });
     
     document.getElementById('clearBoardBtn').addEventListener('click', clearBoard);
