@@ -48,11 +48,11 @@
         <label for="playerName">Name</label>
         <input id="playerName" type="text" placeholder="e.g., Ada" maxlength="16" />
         <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">
-          <input type="checkbox" id="hemichannelToggle" style="width:auto;margin:0" />
-          <span>Hemichannel Mode (ATP propagation)</span>
+          <input type="checkbox" id="unlimitedAmmoToggle" style="width:auto;margin:0" />
+          <span>Unlimited Ammo (Practice Mode)</span>
         </label>
         <div class="row">
-          <button id="startBtn">Start Game ▶</button>
+          <button id="startBtn">Start Wave ▶</button>
           <button id="resetBtn" class="alt">Reset 🔄</button>
         </div>
       </div>
@@ -76,8 +76,7 @@
     <div class="simulation-area">
       <canvas id="canvas" width="1280" height="800"></canvas>
       <div class="status">
-        <div style="font-size:28px;font-weight:bold;margin-bottom:8px;color:var(--accent);text-align:center"><span id="uiTime">1:00</span></div>
-        <div><strong>Score:</strong> <span id="uiScore">0</span> &nbsp;•&nbsp; <strong>Shots:</strong> <span id="uiAmmo">0</span></div>
+        <div><strong>Wave:</strong> <span id="uiWave">1</span> &nbsp;•&nbsp; <strong>Score:</strong> <span id="uiScore">0</span> &nbsp;•&nbsp; <strong>Ammo:</strong> <span id="uiAmmo">0</span></div>
         <div style="margin-top:6px"><strong>Excitability</strong></div>
         <div class="meter"><div id="excMeter"></div></div>
         <div class="small" id="uiDebug"></div>
@@ -91,7 +90,7 @@
   <script>
     // ----------------- Simulation constants -----------------
     const params = {
-      diffusionRate: 1.1, decayRate: 0.035, erRelease: 0.85, ip3Threshold: 0.55,
+      diffusionRate: 2, decayRate: 0.015, erRelease: 0.85, ip3Threshold: 0.55,
       spontaneousRate: 0.001, hemichannelStrength: 0.4, cicrSensitivity: 0.9,
       cicrThreshold: 0.42, simSpeed: 1.0, mgluR: 1.0, atpSens: 1.0
     };
@@ -104,17 +103,19 @@
 
     // Game state
     let running = false;
+    let wave = 1;
     let score = 0;
-    let gameStartTime = 0;
-    let gameDuration = 60; // 60 seconds total
-    let shotsThisGame = 0; // Track shots for scoring penalty
-    let hemichannelMode = false; // Toggle for hemichannel ATP signaling
+    let ammo = 0;
+    let bestExcitability = Infinity;
+    let waveStartTime = 0;
+    let waveDuration = 30; // seconds per wave
+    let unlimitedAmmo = false; // Toggle for unlimited ammo mode
 
     // Missile Command mode systems
     const AXON_COUNT = 5;
     const SYNAPSE_SPACING = 110;
     const SPIKE_BASE_RATE = 0.45;
-    const SPIKE_SPEED = 320;
+    const SPIKE_SPEED = 64;
     const SHOT_SPEED = 700;
     const SHOT_BLAST_IP3 = 1.2;
     const SHOT_BLAST_CA = 0.8;
@@ -416,53 +417,39 @@
       }
       
       draw(){ 
-        // Show protection shield when calcium is present - DRAW FIRST (behind synapse)
-        if(this.protectionLevel > 0.05) {
-          const shieldRadius = 10 + this.protectionLevel * 12;
-          const shieldAlpha = 0.5 + this.protectionLevel * 0.5;
+        // Base synapse - white dot
+        ctx.fillStyle='#ffffff'; 
+        ctx.beginPath(); 
+        ctx.arc(this.x,this.y,2,0,Math.PI*2); 
+        ctx.fill(); 
+        
+        // Show protection shield when calcium is present
+        if(this.protectionLevel > 0.1) {
+          const shieldRadius = 8 + this.protectionLevel * 6;
+          const shieldAlpha = 0.3 + this.protectionLevel * 0.4;
           
-          // Outer glow - bright green
-          ctx.strokeStyle=`rgba(0, 255, 100, ${shieldAlpha * 0.6})`;
-          ctx.lineWidth=3;
-          ctx.shadowColor=`rgba(0, 255, 100, ${shieldAlpha})`;
-          ctx.shadowBlur=10;
+          // Green shield glow
+          ctx.strokeStyle=`rgba(100, 255, 150, ${shieldAlpha})`;
+          ctx.lineWidth=2;
           ctx.beginPath(); 
           ctx.arc(this.x,this.y,shieldRadius,0,Math.PI*2); 
           ctx.stroke();
-          ctx.shadowBlur=0;
           
-          // Inner ring for strong protection
-          if(this.protectionLevel > 0.3) {
-            ctx.strokeStyle=`rgba(100, 255, 150, ${shieldAlpha})`;
-            ctx.lineWidth=2;
+          // Inner glow for strong protection
+          if(this.protectionLevel > 0.5) {
+            ctx.strokeStyle=`rgba(100, 255, 150, ${shieldAlpha * 0.5})`;
+            ctx.lineWidth=1;
             ctx.beginPath(); 
-            ctx.arc(this.x,this.y,shieldRadius - 4,0,Math.PI*2); 
+            ctx.arc(this.x,this.y,shieldRadius + 3,0,Math.PI*2); 
             ctx.stroke();
           }
-          
-          // Filled circle for very strong protection
-          if(this.protectionLevel > 0.6) {
-            const fillGradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, shieldRadius - 6);
-            fillGradient.addColorStop(0, `rgba(100, 255, 150, ${shieldAlpha * 0.3})`);
-            fillGradient.addColorStop(1, 'rgba(100, 255, 150, 0)');
-            ctx.fillStyle = fillGradient;
-            ctx.beginPath(); 
-            ctx.arc(this.x,this.y,shieldRadius - 6,0,Math.PI*2); 
-            ctx.fill();
-          }
         }
-        
-        // Base synapse - white dot ON TOP
-        ctx.fillStyle='#ffffff'; 
-        ctx.beginPath(); 
-        ctx.arc(this.x,this.y,3,0,Math.PI*2); 
-        ctx.fill(); 
         
         // Small outline for visibility
         ctx.strokeStyle='#333333';
         ctx.lineWidth=1;
         ctx.beginPath(); 
-        ctx.arc(this.x,this.y,3,0,Math.PI*2); 
+        ctx.arc(this.x,this.y,2,0,Math.PI*2); 
         ctx.stroke();
       }
     }
@@ -559,7 +546,7 @@
 
     // -------------------- Game Logic --------------------
     function spawnSpikes(dt){ 
-      const rate = SPIKE_BASE_RATE; // Constant rate, no wave scaling
+      const rate = SPIKE_BASE_RATE * (1 + (wave-1)*0.35); 
       axons.forEach(ax=>{ 
         if(Math.random() < rate*dt){ 
           spikes.push(new SpikePacket(ax,SPIKE_SPEED*(0.9+Math.random()*0.25))); 
@@ -572,8 +559,7 @@
       for(const s of synapses) {
         const Ca = astrocyte.sampleCa(s.x, s.y);
         // Protection level tracks calcium concentration (normalized 0-1)
-        // More sensitive threshold so shields appear more readily
-        s.protectionLevel = clamp(Ca / 1.2, 0, 1); // Ca of 1.2+ = full protection
+        s.protectionLevel = clamp(Ca / 2, 0, 1); // Ca of 2+ = full protection
       }
       
       // Spikes trigger glutamate release ONCE per synapse encounter
@@ -625,28 +611,14 @@
         astrocyte.addCa(px, py, SHOT_BLAST_CA * 0.3);
       }
       
-      // Hemichannel mode: ATP propagation to neighboring synapses
-      if(hemichannelMode) {
-        const atpRadius = 80; // Propagation radius
-        const atpStrength = 0.4; // IP3 boost to nearby areas
-        
-        synapses.forEach(s => {
-          const dist = Math.hypot(s.x - x, s.y - y);
-          if(dist < atpRadius && dist > 10) {
-            // Distance-based falloff
-            const falloff = 1 - (dist / atpRadius);
-            astrocyte.addIP3(s.x, s.y, atpStrength * falloff);
-            astrocyte.addCa(s.x, s.y, SHOT_BLAST_CA * 0.15 * falloff);
-          }
-        });
-      }
-      
       const localG = synapses.filter(s=> (s.x-x)**2 + (s.y-y)**2 < 900).reduce((a,s)=>a+s.G,0);
       const baseScore = 20;
       const glutamateBonus = Math.floor(localG * 1.5);
       const totalScore = baseScore + glutamateBonus;
       
       score += totalScore;
+      
+      // Show score popup effect would go here in a more advanced version
     }
 
     // -------------------- Leaderboard --------------------
@@ -690,6 +662,7 @@
     // -------------------- Input Handling --------------------
     canvas.addEventListener('click', e=>{
       if(!running) return;
+      if(!unlimitedAmmo && ammo<=0) return; // Only check ammo if not in unlimited mode
       
       const rect=canvas.getBoundingClientRect(); 
       const sx=e.clientX-rect.left, sy=e.clientY-rect.top; 
@@ -700,7 +673,9 @@
       const src = { x: canvas.width/2, y: canvas.height-40 };
       shots.push(new CaShot(src,dst)); 
       
-      shotsThisGame++; // Track total shots
+      if(!unlimitedAmmo) {
+        ammo--; // Only decrement if not unlimited
+      }
       
       shotTimer=SHOT_COOLDOWN; 
       updateHUD();
@@ -708,111 +683,114 @@
 
     // -------------------- HUD Updates --------------------
     function updateHUD(){ 
+      document.getElementById('uiWave').textContent = wave; 
       document.getElementById('uiScore').textContent = score; 
       
-      // Update timer with prominent countdown
-      const timeRemaining = Math.max(0, gameDuration - (lastStamp - gameStartTime));
-      const minutes = Math.floor(timeRemaining / 60);
-      const seconds = Math.floor(timeRemaining % 60);
-      const timerElement = document.getElementById('uiTime');
-      timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      
-      // Color code timer based on urgency
-      if(timeRemaining <= 10) {
-        timerElement.style.color = '#ef5350'; // Red - urgent
-      } else if(timeRemaining <= 30) {
-        timerElement.style.color = '#ffd54f'; // Yellow - warning
-      } else {
-        timerElement.style.color = '#4fc3f7'; // Cyan - normal
-      }
-      
       const ammoElement = document.getElementById('uiAmmo');
-      ammoElement.textContent = shotsThisGame;
+      ammoElement.textContent = unlimitedAmmo ? '∞' : ammo;
       
-      // Color-code based on efficiency
+      // Color-code ammo based on remaining count (only if not unlimited)
       const ammoStatus = document.querySelector('#uiAmmo').parentElement;
-      const optimalShots = 20; // Target for 60 seconds
-      
-      if(shotsThisGame <= optimalShots) {
-        ammoStatus.style.color = '#81c784'; // Green - efficient
-      } else if(shotsThisGame <= optimalShots * 1.5) {
-        ammoStatus.style.color = '#ffd54f'; // Yellow - acceptable
+      if(unlimitedAmmo) {
+        ammoStatus.style.color = '#81c784'; // Green for unlimited
+      } else if(ammo <= 2) {
+        ammoStatus.style.color = '#ef5350'; // Red - critical
+      } else if(ammo <= 4) {
+        ammoStatus.style.color = '#ffd54f'; // Yellow - warning
       } else {
-        ammoStatus.style.color = '#ef5350'; // Red - wasteful
+        ammoStatus.style.color = '#fff'; // White - normal
       }
     }
 
     // -------------------- Game Flow --------------------
-    function startGame(){ 
+    function startWave(){ 
       if(running) return;
       running=true; 
-      shotsThisGame = 0;
-      score = 0;
-      gameStartTime = lastStamp;
-      // Clear state
+      ammo=SHOT_AMMO_PER_WAVE + Math.floor((wave-1)*0.5); 
+      waveStartTime = lastStamp;
+      updateHUD(); 
+    }
+    
+    function nextWave(){ 
+      wave++; 
+      ammo = SHOT_AMMO_PER_WAVE + Math.floor((wave-1)*0.5); 
+      aboveTime=0; 
+      bestExcitability=Infinity; 
+      waveStartTime = lastStamp;
+      // Clear some state for new wave
       spikes = [];
       shots = [];
-      synapses.forEach(s => s.G = 0);
-      updateHUD(); 
+      synapses.forEach(s => s.G *= 0.3); // Reduce glutamate between waves
+      updateHUD();
+      
+      // Show wave advancement message
+      setTimeout(() => {
+        alert(`Wave ${wave} begins! Spike rate increased.`);
+      }, 100);
     }
     
     function resetAll(){ 
       running=false; 
+      wave=1; 
       score=0; 
-      shotsThisGame=0;
+      ammo=0; 
       aboveTime=0; 
-      gameStartTime=0;
-      lastStamp=0; // Reset timestamp
+      bestExcitability=Infinity; 
+      waveStartTime=0;
       spikes=[]; 
       shots=[]; 
       synapses=[]; 
       axons=[]; 
       generateWorld(); 
-      
-      // Manually reset timer display
-      document.getElementById('uiTime').textContent = '1:00';
-      document.getElementById('uiTime').style.color = '#4fc3f7';
-      document.getElementById('uiScore').textContent = '0';
-      document.getElementById('uiAmmo').textContent = '0';
-      document.querySelector('#uiAmmo').parentElement.style.color = '#81c784';
-      document.getElementById('excMeter').style.width = '0%';
+      updateHUD(); 
     }
     
     function gameOver(){ 
       running=false; 
-      alert(`💥 Network runaway!\nExcitability overload!\nFinal Score: ${score}`); 
+      alert(`💥 Network runaway!\nFinal Wave: ${wave}\nFinal Score: ${score}`); 
     }
 
-    function checkGameComplete(currentTime) {
+    function checkWaveComplete(currentTime) {
       if(!running) return;
       
-      const timeElapsed = currentTime - gameStartTime;
+      const timeInWave = currentTime - waveStartTime;
       const exc = excitabilitySum();
       
-      // Game complete: 60 seconds elapsed
-      if(timeElapsed >= gameDuration) {
-        running = false; // Immediately stop to prevent multiple triggers
+      // Skip ammo-based lose conditions in unlimited ammo mode
+      if(!unlimitedAmmo) {
+        // Lose condition 1: Run out of ammo with high excitability
+        if(ammo <= 0 && exc > EXCIT_THRESH * 0.5) {
+          setTimeout(() => {
+            alert(`💥 Out of ammunition!\nExcitability too high to survive.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+            running = false;
+          }, 100);
+          return;
+        }
         
+        // Lose condition 2: Out of ammo and can't complete wave time
+        if(ammo <= 0 && timeInWave < waveDuration * 0.7) {
+          setTimeout(() => {
+            alert(`⏰ Out of ammunition too early!\nCouldn't survive the wave.\nFinal Wave: ${wave}\nFinal Score: ${score}`);
+            running = false;
+          }, 100);
+          return;
+        }
+      }
+      
+      // Win condition: survive wave duration with reasonable control
+      // In unlimited mode, just need to survive the time with low excitability
+      const survivalThreshold = unlimitedAmmo ? waveDuration : waveDuration;
+      const canWin = (timeInWave >= survivalThreshold && exc < EXCIT_THRESH * 0.8) || 
+                     (!unlimitedAmmo && ammo <= 0 && timeInWave >= waveDuration * 0.7 && exc < EXCIT_THRESH * 0.5);
+      
+      if(canWin) {
         setTimeout(() => {
-          const optimalShots = 20;
-          const excessShots = Math.max(0, shotsThisGame - optimalShots);
-          
-          // Penalty: -10 points per excess shot
-          const efficiencyPenalty = excessShots * 10;
-          const finalScore = score - efficiencyPenalty;
-          score = Math.max(0, finalScore); // Can't go negative
-          
-          let efficiencyMsg = '';
-          if(excessShots === 0) {
-            efficiencyMsg = `\n✓ Perfect efficiency! (${shotsThisGame} shots)`;
-          } else if(excessShots <= 5) {
-            efficiencyMsg = `\n⚠ ${excessShots} excess shots (-${efficiencyPenalty} pts)`;
-          } else {
-            efficiencyMsg = `\n✗ ${excessShots} excess shots (-${efficiencyPenalty} pts)`;
-          }
-          
-          const modeText = hemichannelMode ? ' [Hemichannel Mode]' : '';
-          alert(`Time's Up!${modeText}${efficiencyMsg}\n\nFinal Score: ${score}`);
+          const survivalBonus = (!unlimitedAmmo && ammo > 0) ? Math.floor(ammo * 50) : 0;
+          const efficiencyBonus = Math.floor(1000/wave);
+          const modeText = unlimitedAmmo ? ' (Practice Mode)' : '';
+          alert(`Wave ${wave} Complete!${modeText}\nScore: ${score}\nAmmo Bonus: ${survivalBonus}\nWave Bonus: ${efficiencyBonus}`);
+          score += survivalBonus + efficiencyBonus;
+          nextWave();
         }, 100);
       }
     }
@@ -842,11 +820,12 @@
       updateGlutamate(dt);
       astrocyte.update(dt);
 
-      // Scoring and game completion
+      // Scoring and wave progression
       const exc = excitabilitySum(); 
+      bestExcitability = Math.min(bestExcitability, exc);
       score += Math.max(0, Math.floor(5 - exc*0.02)*dt*10);
       
-      checkGameComplete(ts);
+      checkWaveComplete(ts);
 
       // Lose condition tracking
       const meter = document.getElementById('excMeter'); 
@@ -1013,19 +992,20 @@
     // -------------------- UI Event Handlers --------------------
     document.getElementById('startBtn').addEventListener('click', ()=>{ 
       if(!running){ 
-        startGame(); 
+        startWave(); 
       }
     });
     
     document.getElementById('resetBtn').addEventListener('click', resetAll);
     
-    document.getElementById('hemichannelToggle').addEventListener('change', (e) => {
-      hemichannelMode = e.target.checked;
+    document.getElementById('unlimitedAmmoToggle').addEventListener('change', (e) => {
+      unlimitedAmmo = e.target.checked;
+      updateHUD();
     });
     
     document.getElementById('saveScoreBtn').addEventListener('click', ()=>{ 
       const name=(document.getElementById('playerName').value||'Player').trim().slice(0,16); 
-      const suffix = hemichannelMode ? ' [HC]' : '';
+      const suffix = unlimitedAmmo ? ' (Practice)' : '';
       addScore(name + suffix, Math.floor(score)); 
     });
     
